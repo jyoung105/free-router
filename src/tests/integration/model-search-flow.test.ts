@@ -804,8 +804,8 @@ test(
         cwd: ROOT_DIR,
         env: { HOME: home, FROUTER_NO_FETCH: "1", FROUTER_SKIP_UPDATE_ONCE: "1" },
         inputChunks: [
-          { delayMs: 850, data: "a" },
-          ...buildInputChunks([..."bad-prefix", "\r", "\x1b", "q", "q"], 1500, 120),
+          { delayMs: 2000, data: "a" },
+          ...buildInputChunks([..."bad-prefix", "\r", "\x1b", "q", "q"], 3500, 120),
         ],
         timeoutMs: 12_000,
       });
