@@ -1,4 +1,16 @@
-# frouter
+```
+┌────┬────┬────┬────┬─────┬────┬────┐
+│████│███ │ ██ │█  █│█████│████│███ │
+├────┼────┼────┼────┼─────┼────┼────┤
+│█   │█  █│█  █│█  █│  █  │█   │█  █│
+├────┼────┼────┼────┼─────┼────┼────┤
+│███ │███ │█  █│█  █│  █  │███ │███ │
+├────┼────┼────┼────┼─────┼────┼────┤
+│█   │█ █ │█  █│█  █│  █  │█   │█ █ │
+├────┼────┼────┼────┼─────┼────┼────┤
+│█   │█  █│ ██ │ ██ │  █  │████│█  █│
+└────┴────┴────┴────┴─────┴────┴────┘
+```
 
 [English](./README.md) | [한국어](./README.ko.md)
 
@@ -34,6 +46,19 @@ On first run, a setup wizard prompts for API keys (ESC to skip any provider).
 If you accept the in-app update prompt (`Y`), frouter now updates globally and
 restarts automatically, so you can continue without running `frouter` again.
 
+## Ways to use frouter
+
+1. **First-run onboarding wizard**  
+   Launch `frouter`, open provider websites in-browser from the wizard, paste keys, and start.
+2. **Interactive model search + apply**  
+   Use `/` to filter models, then `Enter` to apply directly to OpenCode config.
+3. **Quick API key rescue from main screen**  
+   Press `A` (or `R` for expired/missing provider) to jump into key editing with auto browser opening for missing keys.
+4. **Full settings workflow**  
+   Press `P` to edit keys, toggle providers, run live key tests, and onboard missing keys provider-by-provider.
+5. **Non-interactive best-model selection**  
+   Run `frouter --best` to print the best responding model ID for scripts.
+
 ## First-run onboarding test (clean state)
 
 Use an isolated temporary `HOME` to test onboarding from zero without deleting your real install/config:
@@ -61,8 +86,8 @@ This keeps the temp `HOME` path after exit for inspection.
 
 | Provider       | Free key                                                                        |
 | -------------- | ------------------------------------------------------------------------------- |
-| **NVIDIA NIM** | [build.nvidia.com](https://build.nvidia.com/settings/api-key) — prefix `nvapi-` |
-| **OpenRouter** | [openrouter.ai/keys](https://openrouter.ai/keys) — prefix `sk-or-`              |
+| **NVIDIA NIM** | [build.nvidia.com](https://build.nvidia.com/settings/api-keys) — prefix `nvapi-` |
+| **OpenRouter** | [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) — prefix `sk-or-` |
 
 API key priority: environment variable → `~/.frouter.json` → keyless ping (latency still shown).
 
@@ -92,11 +117,16 @@ The interactive TUI pings all models in parallel every 2 seconds and shows live 
 | `Ctx`      | Context window size                                            |
 | `AA`       | Arena Elo / intelligence score                                 |
 | `Avg`      | Rolling average latency (HTTP 200 only)                        |
-| `Lat`      | Latest ping latency                                            |
+| `Lat`      | Latest measured ping latency                                   |
 | `Up%`      | Uptime percentage this session                                 |
 | `Verdict`  | Condition summary (🚀 Perfect / ✅ Normal / 🔥 Overloaded / …) |
 
 Default ranking: **availability first**, then **higher tier first** (S+ → S → A+ …), then lower latency.
+
+Search bar provider badges:
+- `Name:✓` key exists and looks healthy
+- `Name:✗` provider appears expired/no-auth
+- `Name:○` key missing
 
 ### Keyboard shortcuts
 
@@ -117,6 +147,7 @@ Default ranking: **availability first**, then **higher tier first** (S+ → S �
 | `Enter`        | Select model → target picker (OpenCode / OpenClaw)                |
 | `/`            | Search / filter models (Enter in search = apply to OpenCode only) |
 | `A`            | Quick API key add/change (opens key editor in Settings)           |
+| `R`            | Edit API key for likely expired/missing provider                  |
 | `T`            | Cycle tier filter: All → S+ → S → A+ → …                          |
 | `P`            | Settings screen (edit keys, toggle providers, test)               |
 | `W` / `X`      | Faster / slower ping interval                                     |
@@ -151,7 +182,7 @@ After pressing `Enter` on a model:
 
 If OpenCode fallback remaps the provider (for example NIM Stepfun → OpenRouter)
 and the effective provider key is missing, frouter asks:
-`Launch opencode anyway? (Y/n, default: n)`.
+`Add API key now? (Y/n, default: Y)`.
 
 Configs written:
 
@@ -173,10 +204,12 @@ OPENCODE_CLI_RUN_MODE=false frouter
 ### Settings screen (`P`)
 
 Tip: press `A` from the main list to jump directly into API key editing.
+Tip: if a selected provider has no key, frouter auto-opens that provider key page
+in browser (once per provider per settings session), including when you move selection.
 
 | Key       | Action                             |
 | --------- | ---------------------------------- |
-| `↑` / `↓` | Navigate providers                 |
+| `↑` / `↓` / `j` / `k` | Navigate providers      |
 | `Enter`   | Edit API key inline                |
 | `Space`   | Toggle provider enabled / disabled |
 | `T`       | Fire a live test ping              |

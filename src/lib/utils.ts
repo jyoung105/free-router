@@ -50,15 +50,15 @@ function isFiniteMs(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
-function isOkPing(ping: any): boolean {
-  return ping?.code === "200" && isFiniteMs(ping?.ms);
+function isReachablePing(ping: any): boolean {
+  return (ping?.code === "200" || ping?.code === "401") && isFiniteMs(ping?.ms);
 }
 
 function recomputeMetricsFromPings(pings: any[]): ModelMetrics {
   const metrics = emptyMetrics();
   for (const ping of pings) {
     metrics.count++;
-    if (isOkPing(ping)) {
+    if (isReachablePing(ping)) {
       metrics.okCount++;
       metrics.sumOkMs += ping.ms;
     }
@@ -114,7 +114,7 @@ export function applyModelPingResult(
   model.pings.push(pingResult);
   if (metrics) {
     metrics.count++;
-    if (isOkPing(pingResult)) {
+    if (isReachablePing(pingResult)) {
       metrics.okCount++;
       metrics.sumOkMs += pingResult.ms;
     }
@@ -124,7 +124,7 @@ export function applyModelPingResult(
     const removed = model.pings.shift();
     if (metrics) {
       metrics.count = Math.max(0, metrics.count - 1);
-      if (isOkPing(removed)) {
+      if (isReachablePing(removed)) {
         metrics.okCount = Math.max(0, metrics.okCount - 1);
         metrics.sumOkMs -= removed.ms;
       }
@@ -170,7 +170,7 @@ export function getAvg(model) {
     if (!metrics.okCount) return Infinity;
     return metrics.sumOkMs / metrics.okCount;
   }
-  const ok = model.pings.filter((p) => p.code === "200");
+  const ok = model.pings.filter((p) => p.code === "200" || p.code === "401");
   if (!ok.length) return Infinity;
   return ok.reduce((s, p) => s + p.ms, 0) / ok.length;
 }
@@ -184,7 +184,7 @@ export function getUptime(model) {
   }
   if (!model.pings.length) return 0;
   return Math.round(
-    (model.pings.filter((p) => p.code === "200").length / model.pings.length) *
+    (model.pings.filter(isReachablePing).length / model.pings.length) *
       100,
   );
 }

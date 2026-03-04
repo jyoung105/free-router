@@ -1,6 +1,6 @@
 {
   "name": "frouter-cli",
-  "version": "1.1.10",
+  "version": "1.1.11",
   "description": "Free model router — discover, ping, and configure free AI models for OpenCode / OpenClaw",
   "bin": {
     "frouter": "dist/bin/frouter.js"
@@ -10,8 +10,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && cp data/model-rankings.json data/model-support.json dist/",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint src --ext .ts --max-warnings=0",
-    "lint:fix": "eslint src --ext .ts --fix",
+    "lint": "eslint src --ext .ts,.tsx --max-warnings=0",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "pretest": "npm run build",
     "test": "node --test dist/tests/unit/*.test.js dist/tests/integration/*.test.js dist/tests/security/*.test.js",
     "test:perf": "npm run build && node --expose-gc --test dist/tests/perf/*.perf.test.js",
@@ -28,6 +28,7 @@
   "files": [
     "dist/bin/",
     "dist/lib/",
+    "dist/tui/",
     "dist/model-rankings.json",
     "dist/model-support.json",
     "scripts/frouter-fresh-start.sh"
@@ -52,7 +53,13 @@
     "free-api"
   ],
   "license": "MIT",
+  "dependencies": {
+    "@inkjs/ui": "^2.0.0",
+    "ink": "^5.1.0",
+    "react": "^18.3.1"
+  },
   "devDependencies": {
+    "@types/react": "^18.3.0",
     "@eslint/js": "^9.39.3",
     "@types/node": "^25.3.0",
     "eslint": "^9.39.3",

@@ -115,7 +115,7 @@ export function validateProviderApiKey(providerKey, rawValue) {
 
 // ─── Browser helper ───────────────────────────────────────────────────────────
 
-function openBrowser(url) {
+export function openBrowser(url: string) {
   const commands = {
     darwin: `open "${url}"`,
     win32: `start "" "${url}"`,

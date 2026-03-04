@@ -806,12 +806,7 @@ export async function getAllModels(config: any): Promise<any[]> {
           if (nvidiaKey && !noFetch)
             nimModels = await fetchNimModels(nvidiaKey);
           const source = nimModels || NIM_MODELS;
-          return source.map((m) => ({
-            ...m,
-            pings: [],
-            status: "pending",
-            httpCode: null,
-          }));
+          return source.map((m) => ({ ...m, pings: [] }));
         })()
       : Promise.resolve([]),
     orEnabled && !noFetch

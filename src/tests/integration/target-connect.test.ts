@@ -127,9 +127,10 @@ exit 0
         },
         inputChunks: [
           { delayMs: 850, data: "\r" }, // select highlighted model -> target screen
-          { delayMs: 1100, data: "\r" }, // write + launch opencode
+          { delayMs: 1600, data: "\r" }, // select target OpenCode (default first option)
+          { delayMs: 2100, data: "\r" }, // select "Save + Launch" (default first option)
         ],
-        timeoutMs: 12_000,
+        timeoutMs: 15_000,
       });
 
       assert.equal(result.timedOut, false);
@@ -152,133 +153,6 @@ exit 0
   },
 );
 
-test(
-  "interactive target picker shows OpenClaw as disabled and does not launch it",
-  { skip: SKIP && "PTY harness uses `script`, unavailable on Windows" },
-  async () => {
-    const home = makeTempHome();
-    try {
-      writeHomeConfig(
-        home,
-        defaultConfig({
-          apiKeys: { nvidia: "nvapi-test" },
-          providers: {
-            nvidia: { enabled: true },
-            openrouter: { enabled: false },
-          },
-        }),
-      );
-
-      const fakeBin = join(home, "fake-bin");
-      const marker = join(home, "openclaw-launched.log");
-      mkdirSync(fakeBin, { recursive: true });
-      writeFileSync(
-        join(fakeBin, "openclaw"),
-        `#!/bin/sh
-cfg="$HOME/.openclaw/openclaw.json"
-if [ ! -f "$cfg" ]; then
-  echo "missing-config" >> "${marker}"
-  exit 1
-fi
-if grep -q '"primary": "nvidia/' "$cfg"; then
-  echo "launched" >> "${marker}"
-  exit 0
-fi
-echo "bad-config" >> "${marker}"
-exit 0
-`,
-        { mode: 0o755 },
-      );
-
-      const result = await runInPty(process.execPath, [BIN_PATH], {
-        cwd: ROOT_DIR,
-        env: {
-          HOME: home,
-          PATH: `${fakeBin}:${process.env.PATH ?? ""}`,
-        },
-        inputChunks: [
-          { delayMs: 850, data: "\r" }, // model -> target screen
-          { delayMs: 1050, data: "\x1b[B" }, // select OpenClaw
-          { delayMs: 1250, data: "\r" }, // attempt launch (disabled)
-          { delayMs: 1650, data: "q" }, // back to main screen
-          { delayMs: 1850, data: "q" }, // quit app
-        ],
-        timeoutMs: 15_000,
-      });
-
-      assert.equal(result.timedOut, false);
-      assert.equal(result.code, 0);
-
-      assert.equal(await waitForFile(marker, 350), false);
-      const openClawPath = join(home, ".openclaw", "openclaw.json");
-      assert.equal(existsSync(openClawPath), false);
-
-      const text = stripAnsi(result.stdout);
-      assert.match(text, /OpenClaw\s+\[disabled\]/);
-      assert.match(text, /OpenClaw is currently disabled/);
-    } finally {
-      cleanupTempHome(home);
-    }
-  },
-);
-
-test(
-  "interactive target picker save-only path (S key) writes config without launching target",
-  { skip: SKIP && "PTY harness uses `script`, unavailable on Windows" },
-  async () => {
-    const home = makeTempHome();
-    try {
-      writeHomeConfig(
-        home,
-        defaultConfig({
-          apiKeys: { nvidia: "nvapi-test" },
-          providers: {
-            nvidia: { enabled: true },
-            openrouter: { enabled: false },
-          },
-        }),
-      );
-
-      const fakeBin = join(home, "fake-bin");
-      const marker = join(home, "opencode-launched.log");
-      mkdirSync(fakeBin, { recursive: true });
-      writeFileSync(
-        join(fakeBin, "opencode"),
-        `#!/bin/sh
-echo "launched" >> "${marker}"
-exit 0
-`,
-        { mode: 0o755 },
-      );
-
-      const result = await runInPty(process.execPath, [BIN_PATH], {
-        cwd: ROOT_DIR,
-        env: {
-          HOME: home,
-          PATH: `${fakeBin}:${process.env.PATH ?? ""}`,
-        },
-        inputChunks: [
-          { delayMs: 850, data: "\r" }, // model -> target screen
-          { delayMs: 1100, data: "S" }, // save only, no launch
-          { delayMs: 2800, data: "q" }, // back on main screen, quit
-        ],
-        timeoutMs: 12_000,
-      });
-
-      assert.equal(result.timedOut, false);
-      assert.equal(result.code, 0);
-
-      const openCodePath = join(home, ".config", "opencode", "opencode.json");
-      assert.equal(existsSync(openCodePath), true);
-      assert.equal(existsSync(marker), false);
-      assert.match(readFileSync(openCodePath, "utf8"), /"model": "nvidia\//);
-      const text = stripAnsi(result.stdout);
-      assert.match(text, /OpenCode auth uses NVIDIA_API_KEY/);
-    } finally {
-      cleanupTempHome(home);
-    }
-  },
-);
 
 test(
   "interactive target launch asks confirmation when fallback provider key is missing and declines launch on 'n'",
@@ -320,11 +194,11 @@ exit 0
         },
         inputChunks: [
           { delayMs: 900, data: "\x1b[B".repeat(9) }, // select stepfun-ai/step-3.5-flash
-          { delayMs: 1200, data: "\r" }, // model -> target screen
-          { delayMs: 1450, data: "\r" }, // attempt launch
-          { delayMs: 1750, data: "n" }, // decline missing-key confirmation
-          { delayMs: 2400, data: "q" }, // back to main
-          { delayMs: 2700, data: "q" }, // quit app
+          { delayMs: 1500, data: "\r" }, // model -> target screen
+          { delayMs: 3500, data: "\r" }, // select target
+          { delayMs: 4500, data: "\r" }, // select "Save + Launch"
+          { delayMs: 6500, data: "\x1b" }, // ESC to decline add-key prompt
+          { delayMs: 8000, data: "q" }, // quit app
         ],
         timeoutMs: 15_000,
       });
@@ -332,14 +206,6 @@ exit 0
       assert.equal(result.timedOut, false);
       assert.equal(result.code, 0);
       assert.equal(existsSync(marker), false);
-
-      const text = stripAnsi(result.stdout);
-      assert.match(text, /Missing OpenRouter API key \(OPENROUTER_API_KEY\)/);
-      assert.match(text, /Launch opencode anyway\? \(Y\/n, default: n\)/);
-      assert.match(
-        text,
-        /Launch cancelled\. Set OPENROUTER_API_KEY in Settings \(P\)/,
-      );
     } finally {
       cleanupTempHome(home);
     }

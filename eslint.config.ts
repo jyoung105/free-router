@@ -11,7 +11,7 @@ export default tseslint.config(
     ignores: ["dist/**", "node_modules/**", ".omx/**", ".omc/**"],
   },
   {
-    files: ["src/**/*.ts"],
+    files: ["src/**/*.ts", "src/**/*.tsx"],
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     languageOptions: {
       ecmaVersion: "latest",
@@ -37,7 +37,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["src/bin/**/*.ts", "src/lib/**/*.ts"],
+    files: ["src/bin/**/*.ts", "src/lib/**/*.ts", "src/tui/**/*.tsx"],
     rules: {
       "@typescript-eslint/no-floating-promises": [
         "error",

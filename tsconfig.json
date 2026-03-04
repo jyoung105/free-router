@@ -9,8 +9,9 @@
     "strict": false,
     "skipLibCheck": true,
     "noEmitOnError": true,
-    "sourceMap": false
+    "sourceMap": false,
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules"]
 }

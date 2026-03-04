@@ -6,10 +6,10 @@ import {
   loadConfig,
   saveConfig,
   getApiKey,
-  runFirstRunWizard,
   promptMasked,
   PROVIDERS_META,
   validateProviderApiKey,
+  openBrowser,
 } from "../lib/config.js";
 import { getAllModels } from "../lib/models.js";
 import {
@@ -140,13 +140,11 @@ let tierFilter = "All";
 let pingMs = 2000;
 let screen = "main"; // 'main' | 'settings' | 'target' | 'help'
 let sCursor = 0;
-let tCursor = 0;
 let selModel = null;
 let sEditing = false;
 let sKeyBuf = "";
 let sTestRes = {};
 let sNotice = "";
-let tNotice = "";
 let pingRef = null;
 let userNavigated = false; // true once user actively moves cursor
 let autoSortPauseUntil = 0;
@@ -305,17 +303,23 @@ function truncAnsi(s: string, maxVis: number): string {
 }
 
 const STARTUP_PIXEL_TITLE = [
-  "  █████  ████    ███   █   █  █████  █████  ████   ",
-  "  █      █   █  █   █  █   █    █    █      █   █  ",
-  "  ████   ████   █   █  █   █    █    ████   ████   ",
-  "  █      █ █    █   █  █   █    █    █      █ █    ",
-  "  █      █  ██   ███    ███     █    █████  █  ██  ",
+  "  ┌────┬────┬────┬────┬─────┬────┬────┐",
+  "  │████│███ │ ██ │█  █│█████│████│███ │",
+  "  ├────┼────┼────┼────┼─────┼────┼────┤",
+  "  │█   │█  █│█  █│█  █│  █  │█   │█  █│",
+  "  ├────┼────┼────┼────┼─────┼────┼────┤",
+  "  │███ │███ │█  █│█  █│  █  │███ │███ │",
+  "  ├────┼────┼────┼────┼─────┼────┼────┤",
+  "  │█   │█ █ │█  █│█  █│  █  │█   │█ █ │",
+  "  ├────┼────┼────┼────┼─────┼────┼────┤",
+  "  │█   │█  █│ ██ │ ██ │  █  │████│█  █│",
+  "  └────┴────┴────┴────┴─────┴────┴────┘",
 ];
 
 function startupPixelTitleLines() {
   return STARTUP_PIXEL_TITLE.map((line, idx) => {
-    if (idx <= 1) return `${B}${line}${R}`;
-    if (idx >= 3) return `${D}${line}${R}`;
+    if (idx <= 2) return `${B}${line}${R}`;
+    if (idx >= 8) return `${D}${line}${R}`;
     return line;
   });
 }
@@ -341,6 +345,24 @@ function statusDot(model) {
   }
 }
 
+// ─── Expired key detection ───────────────────────────────────────────────────
+function isProviderKeyExpired(providerKey: string): boolean {
+  const provConf = config.providers?.[providerKey];
+  if (provConf?.enabled === false) return false;
+  const provModels = models.filter((m) => m.providerKey === providerKey);
+  if (provModels.length === 0) return false;
+  const pinged = provModels.filter((m) => m.status && m.status !== "pending");
+  if (pinged.length === 0) return false;
+  return pinged.every((m) => m.status === "noauth");
+}
+
+function findExpiredProvider(): string | null {
+  for (const pk of Object.keys(PROVIDERS_META)) {
+    if (isProviderKeyExpired(pk)) return pk;
+  }
+  return null;
+}
+
 // ─── Main TUI ──────────────────────────────────────────────────────────────────
 function renderMain() {
   const { c, r } = viewport();
@@ -351,7 +373,11 @@ function renderMain() {
   const provStatus = Object.entries(PROVIDERS_META)
     .map(([pk, m]) => {
       const on = config.providers?.[pk]?.enabled !== false;
-      return on ? `${GREEN}${m.name}${R}` : `${D}${m.name} off${R}`;
+      if (!on) return `${D}${m.name} off${R}`;
+      const key = getApiKey(config, pk);
+      if (!key) return `${YELLOW}${m.name} ○${R}`;
+      if (isProviderKeyExpired(pk)) return `${RED}${m.name} ✗${R}`;
+      return `${GREEN}${m.name} ✓${R}`;
     })
     .join("  ");
 
@@ -359,10 +385,19 @@ function renderMain() {
   const searchInput = searchMode
     ? `${CYAN}/${searchQuery}_${R}`
     : `${D}Press '/' to search models${R}`;
+  const keyBadges = Object.entries(PROVIDERS_META)
+    .filter(([pk]) => config.providers?.[pk]?.enabled !== false)
+    .map(([pk, m]) => {
+      const key = getApiKey(config, pk);
+      if (!key) return `${YELLOW}${m.name}:○${R}`;
+      if (isProviderKeyExpired(pk)) return `${RED}${m.name}:✗${R}`;
+      return `${GREEN}${m.name}:✓${R}`;
+    })
+    .join("  ");
   const searchHint = searchMode
     ? `${YELLOW}[ESC clear]${R} ${GREEN}[Enter apply]${R}`
     : `${CYAN}[/ start]${R}`;
-  const searchBar = `${searchLabel} ${searchInput} ${searchHint}`;
+  const searchBar = `${searchLabel} ${searchInput} ${keyBadges}  ${searchHint}`;
 
   const tierBar =
     tierFilter !== "All" ? `${YELLOW}tier:${tierFilter}${R}  ` : "";
@@ -428,7 +463,7 @@ function renderMain() {
       const avg = getAvg(m);
       const avgStr = fmtLatency(avg !== Infinity ? avg : null);
       const last = m.pings.at(-1);
-      const latMs = last?.code === "200" ? last.ms : null;
+      const latMs = Number.isFinite(last?.ms) ? last.ms : null;
       const latStr = fmtLatency(latMs);
       const up = getUptime(m);
       const upStr = uptimeColor(up) + fmtUp(up, m.pings.length > 0) + R;
@@ -486,6 +521,7 @@ function renderHelp() {
       `  Enter       Select model → target picker (OpenCode / OpenClaw disabled)\n` +
       `  /           Focus model search (filter by model name; Enter applies to OpenCode only)\n` +
       `  A           Quick API key add/change (opens key editor)\n` +
+      `  R           Change API key (auto-detects expired provider)\n` +
       `  T           Cycle tier filter (All → S+ → S → …)\n` +
       `  P           Settings (API keys, toggle providers)\n` +
       `  W / X       Faster / slower ping interval\n` +
@@ -541,50 +577,6 @@ function renderSettings() {
   w(out);
 }
 
-// ─── Target picker ─────────────────────────────────────────────────────────────
-const TARGETS = [
-  {
-    id: "opencode",
-    label: "OpenCode CLI",
-    path: "~/.config/opencode/opencode.json",
-    enabled: true,
-  },
-  {
-    id: "openclaw",
-    label: "OpenClaw",
-    path: "~/.openclaw/openclaw.json",
-    enabled: false,
-  },
-];
-
-function renderTarget() {
-  const name = selModel?.displayName || selModel?.id || "?";
-  const fullId = selModel ? `${selModel.providerKey}/${selModel.id}` : "";
-  let out = CLEAR + HIDEC;
-  out += `${BG_HDR}${WHITE}${B} Configure: ${name} ${R}\n`;
-  out += `${D}  ${fullId}${R}\n\n`;
-
-  for (let i = 0; i < TARGETS.length; i++) {
-    const t = TARGETS[i];
-    const isSel = i === tCursor;
-    const prefix = isSel ? `${B} ❯ ${R}` : "   ";
-    const status = t.enabled
-      ? `${GREEN}[enabled]${R}`
-      : `${YELLOW}[disabled]${R}`;
-    out += `${prefix}${pad(t.label, 12)} ${status}  ${D}${t.path}${R}\n`;
-  }
-
-  const target = TARGETS[tCursor];
-  if (target && !target.enabled) {
-    out += `\n${YELLOW} ${target.label} is currently disabled.${R}\n`;
-  } else if (tNotice) {
-    out += `\n${tNotice}\n`;
-  }
-
-  out += `\n${INVERT} Enter:save + open  G:same  S:save only  ESC:cancel ${R}\n`;
-  w(out);
-}
-
 // ─── Render dispatcher ─────────────────────────────────────────────────────────
 function render() {
   switch (screen) {
@@ -593,9 +585,6 @@ function render() {
       break;
     case "settings":
       renderSettings();
-      break;
-    case "target":
-      renderTarget();
       break;
     case "help":
       renderHelp();
@@ -705,7 +694,7 @@ function resetSearchState() {
   scrollOff = 0;
 }
 
-function resetSettingsState() {
+function _resetSettingsState() {
   sEditing = false;
   sKeyBuf = "";
   sNotice = "";
@@ -715,12 +704,74 @@ function resetSettingsState() {
 function enterTargetPickerFromSelection() {
   if (!filtered.length) return false;
   selModel = filtered[cursor];
-  tCursor = 0;
-  tNotice = "";
   searchMode = false;
-  screen = "target";
+  screen = "ink-subapp";
+  void launchOpenCodeDirect();
   return true;
 }
+
+async function launchOpenCodeDirect() {
+  prepareForInkSubApp();
+
+  const { openCodeModel, openCodePk, openCodeApiKey, notice: resolveNotice } =
+    resolveOpenCodeApplySelection(selModel);
+  if (resolveNotice) w(resolveNotice + "\n");
+
+  let launch = true;
+
+  try {
+    const writtenPath = writeOpenCode(openCodeModel, openCodePk, openCodeApiKey, {
+      persistApiKey: ALLOW_PLAINTEXT_KEY_EXPORT,
+    });
+    w(`${GREEN} \u2713 OpenCode config written \u2192 ${writtenPath}${R}\n`);
+    const authHint = getOpenCodeAuthHint(openCodePk, openCodeApiKey, { launch });
+    if (authHint) w(authHint + "\n");
+  } catch (err: any) {
+    w(`${RED} \u2717 OpenCode write failed: ${err.message}${R}\n`);
+    setTimeout(() => { restoreAfterInkSubApp("main"); restartLoop(); }, 1400);
+    return;
+  }
+
+  // Guard: missing API key → offer to add it
+  if (launch && !openCodeApiKey) {
+    const meta = PROVIDERS_META[openCodePk];
+    const envVar = meta?.envVar || "API key";
+    w(`\n${YELLOW} ! Missing ${meta?.name || openCodePk} API key (${envVar}).${R}\n`);
+    const addKey = await promptYesNoFromTarget(
+      `${D}   Add API key now? (Y/n, default: Y): ${R}`,
+      true,
+    );
+    if (addKey) {
+      openApiKeyEditorFromMain(openCodePk);
+      return;
+    }
+    w(`${YELLOW} Launch cancelled. Set ${envVar} in Settings (P), then retry.${R}\n`);
+    launch = false;
+  }
+
+  if (launch) {
+    if (!isOpenCodeInstalled()) {
+      w(`${YELLOW} ! opencode is not installed. Install from https://github.com/opencode-ai/opencode${R}\n`);
+      setTimeout(() => { restoreAfterInkSubApp("main"); restartLoop(); }, 1400);
+      return;
+    }
+    const launchEnv = buildOpenCodeLaunchEnv(openCodePk, openCodeApiKey);
+    cleanup();
+    const proc = spawnSync("opencode", [], {
+      stdio: "inherit",
+      shell: true,
+      env: launchEnv,
+    });
+    process.exit(Number.isInteger(proc.status) ? proc.status : 1);
+  }
+
+  // ── Save-only path: show messages briefly, then restore main TUI ──
+  setTimeout(() => {
+    restoreAfterInkSubApp("main");
+    restartLoop();
+  }, 1400);
+}
+
 
 function resolveOpenCodeApplySelection(selectedModel) {
   const pk = selectedModel.providerKey;
@@ -764,16 +815,16 @@ function buildOpenCodeLaunchEnv(providerKey, apiKey) {
   return launchEnv;
 }
 
-async function promptYesNoFromTarget(question: string): Promise<boolean> {
+async function promptYesNoFromTarget(question: string, defaultValue = false): Promise<boolean> {
   process.stdin.removeListener("data", onData);
   try {
-    return await promptYesNo(question);
+    return await promptYesNo(question, defaultValue);
   } finally {
     process.stdin.on("data", onData);
   }
 }
 
-async function promptInstallOpenCode() {
+async function _promptInstallOpenCode() {
   w(`\n${YELLOW} ! opencode CLI is not installed.${R}\n`);
   const installers = detectAvailableInstallers();
   if (!installers.length) {
@@ -878,13 +929,50 @@ function resolveQuickApiKeyProviderIndex() {
   return 0;
 }
 
-function openApiKeyEditorFromMain() {
-  stopPingLoop(pingRef);
-  sCursor = resolveQuickApiKeyProviderIndex();
-  resetSettingsState();
-  sEditing = true;
+function openApiKeyEditorFromMain(providerKey?: string) {
   searchMode = false;
-  screen = "settings";
+  screen = "ink-subapp";
+  const pks = Object.keys(PROVIDERS_META);
+  const resolvedProviderKey = providerKey || pks[resolveQuickApiKeyProviderIndex()];
+  void openSettingsInk("editKey", resolvedProviderKey);
+}
+
+async function openSettingsInk(initialMode: "navigate" | "editKey" = "navigate", providerKey?: string) {
+  // Detach main input handler immediately — before dynamic imports — so that
+  // dispatch() cannot silently drop keystrokes destined for the Ink subapp.
+  // Without this, input that arrives during the import gap is consumed by
+  // dispatch (screen is already "ink-subapp") and never reaches Ink.
+  process.stdin.removeListener("data", onData);
+
+  const React = await import("react");
+  const { SettingsApp } = await import("../tui/SettingsApp.js");
+  const { runInkSubApp } = await import("../tui/ink-harness.js");
+
+  const result = await runInkSubApp<{ config: any }>(
+    (resolve) =>
+      React.createElement(SettingsApp, {
+        config,
+        providers: PROVIDERS_META,
+        getApiKey,
+        validateKey: validateProviderApiKey,
+        saveConfig,
+        ping,
+        openBrowser,
+        initialMode,
+        initialProvider: providerKey,
+        onDone: resolve,
+      }),
+    {
+      beforeMount: () => prepareForInkSubApp(),
+      afterUnmount: () => restoreAfterInkSubApp("main"),
+    },
+  );
+
+  config = result.config;
+  void refreshModels().then(() => {
+    restartLoop();
+    renderWithAuthority("refresh-complete");
+  });
 }
 
 function handleMain(ch) {
@@ -941,12 +1029,24 @@ function handleMain(ch) {
   } else if (ch === "\r") {
     enterTargetPickerFromSelection();
   } else if (ch === "p" || ch === "P") {
-    stopPingLoop(pingRef);
-    sCursor = 0;
-    resetSettingsState();
-    screen = "settings";
+    searchMode = false;
+    screen = "ink-subapp";
+    void openSettingsInk("navigate");
+    return;
   } else if (ch === "a" || ch === "A") {
     openApiKeyEditorFromMain();
+    return;
+  } else if (ch === "r" || ch === "R") {
+    const expired = findExpiredProvider();
+    if (expired) {
+      openApiKeyEditorFromMain(expired);
+    } else {
+      // Fall back to current model's provider or first provider
+      const sel = filtered[cursor];
+      const pk = sel?.providerKey || Object.keys(PROVIDERS_META)[0];
+      openApiKeyEditorFromMain(pk);
+    }
+    return;
   } else if (ch === "?") {
     screen = "help";
   } else if (ch === "q") {
@@ -1053,7 +1153,9 @@ function handleSettings(ch) {
     sTestRes[currentPk] = "testing…";
     renderWithAuthority("settings-test");
     void ping(key, currentMeta.testModel, currentMeta.chatUrl).then((r) => {
-      sTestRes[currentPk] = r.code === "200" ? `${r.ms}ms ✓` : `${r.code} ✗`;
+      const msPart = Number.isFinite(r.ms) ? `${r.ms}ms ` : "";
+      const ok = r.code === "200" || r.code === "401";
+      sTestRes[currentPk] = `${msPart}${r.code} ${ok ? "✓" : "✗"}`;
       renderWithAuthority("settings-test");
     });
     return;
@@ -1062,105 +1164,6 @@ function handleSettings(ch) {
   renderWithAuthority("settings-ui");
 }
 
-async function handleTarget(ch) {
-  tNotice = "";
-  if (ch === "\x1b" || ch === "q") {
-    screen = "main";
-    renderWithAuthority("target-ui");
-    return;
-  } else if (ch === UP) {
-    tCursor = Math.max(0, tCursor - 1);
-  } else if (ch === DOWN) {
-    tCursor = Math.min(TARGETS.length - 1, tCursor + 1);
-  }
-
-  // Enter/G = write config + open target; S = write config only
-  if (ch === "\r" || ch === "g" || ch === "G" || ch === "s" || ch === "S") {
-    const target = TARGETS[tCursor];
-    if (!target?.enabled) {
-      tNotice = `${YELLOW} ${target?.label || "This target"} is currently disabled.${R}`;
-      renderWithAuthority("target-ui");
-      return;
-    }
-
-    const launch = !(ch === "s" || ch === "S");
-    const { openCodeModel, openCodePk, openCodeApiKey, notice } =
-      resolveOpenCodeApplySelection(selModel);
-
-    if (launch && !openCodeApiKey) {
-      const meta = PROVIDERS_META[openCodePk];
-      const envVar = meta?.envVar || "API key";
-
-      w(
-        `\n${YELLOW} ! Missing ${meta?.name || openCodePk} API key (${envVar}).${R}\n`,
-      );
-      if (notice) w(`${notice}\n`);
-
-      const proceed = await promptYesNoFromTarget(
-        `${D}   Launch opencode anyway? (Y/n, default: n): ${R}`,
-      );
-      if (!proceed) {
-        tNotice = `${YELLOW} Launch cancelled. Set ${envVar} in Settings (P), then retry.${R}`;
-        renderWithAuthority("target-prompt");
-        return;
-      }
-    }
-
-    if (launch && !isOpenCodeInstalled()) {
-      cleanup();
-      const installed = await promptInstallOpenCode();
-      if (!installed) {
-        process.exit(0);
-      }
-    }
-
-    try {
-      if (notice) w(`\n${notice}\n`);
-      const writtenPath = writeOpenCode(
-        openCodeModel,
-        openCodePk,
-        openCodeApiKey,
-        {
-          persistApiKey: ALLOW_PLAINTEXT_KEY_EXPORT,
-        },
-      );
-      w(`\n${GREEN} ✓ OpenCode config written → ${writtenPath}${R}\n`);
-      if (launch) {
-        cleanup();
-        const launchEnv = buildOpenCodeLaunchEnv(openCodePk, openCodeApiKey);
-        const result = spawnSync("opencode", [], {
-          stdio: "inherit",
-          shell: true,
-          env: launchEnv,
-        });
-        const code = Number.isInteger(result.status) ? result.status : 1;
-        process.exit(code);
-      }
-      const authHint = getOpenCodeAuthHint(openCodePk, openCodeApiKey, {
-        launch,
-      });
-      if (authHint) w(`${authHint}\n`);
-      if (!launch && !isOpenCodeInstalled()) {
-        w(
-          `${YELLOW} ! opencode CLI is not installed. Install it to use this config.${R}\n`,
-        );
-      }
-    } catch (err) {
-      w(`\n${RED} ✗ ${err.message}${R}\n`);
-    }
-
-    setTimeout(
-      () => {
-        screen = "main";
-        renderWithAuthority("timed-return");
-      },
-      launch ? 2000 : 1400,
-    );
-    return;
-  }
-
-  renderWithAuthority("target-ui");
-}
 
 // ─── Raw input dispatcher ──────────────────────────────────────────────────────
 // Buffer escape sequences: if \x1b arrives alone, wait 50ms to see if [ follows.
@@ -1287,7 +1290,6 @@ function dispatch(ch) {
 
   if (screen === "main") handleMain(ch);
   else if (screen === "settings") handleSettings(ch);
-  else if (screen === "target") handleTarget(ch).catch(() => {});
 }
 
 // ─── Model management ──────────────────────────────────────────────────────────
@@ -1352,6 +1354,33 @@ function restartLoop() {
   );
 }
 
+// ─── Ink sub-app lifecycle helpers ─────────────────────────────────────────────
+// Used by runInkSubApp hooks to safely transition between raw ANSI and Ink rendering.
+
+function prepareForInkSubApp() {
+  process.stdin.removeListener("data", onData);
+  if (escTimer) { clearTimeout(escTimer); escTimer = null; }
+  escBuf = "";
+  if (_renderTimer) { clearTimeout(_renderTimer); _renderTimer = null; }
+  screen = "ink-subapp";
+  stopPingLoop(pingRef);
+  // Don't change raw mode — the harness manages stdin via a proxy stream.
+  w(ALT_OFF + SHOWC);
+}
+
+function restoreAfterInkSubApp(returnScreen = "main") {
+  w(ALT_ON + HIDEC);
+  // The harness manages stdin directly (proxy pattern), so process.stdin
+  // is still in raw/flowing/data-listener mode from prepareForInkSubApp's teardown.
+  // We just need to re-attach our handler and restore raw mode.
+  try { process.stdin.setRawMode(true); } catch { /* best-effort */ }
+  process.stdin.setEncoding("utf8");
+  process.stdin.on("data", onData);
+  process.stdin.resume();
+  screen = returnScreen;
+  renderWithAuthority("settings-exit");
+}
+
 // ─── Update check ────────────────────────────────────────────────────────────
 const REGISTRY_URL =
   process.env.FROUTER_REGISTRY_URL ||
@@ -1366,7 +1395,7 @@ type UpdateInstallCommand = {
 
 function fetchLatestVersion(): Promise<string | null> {
   return new Promise((resolve) => {
-    const timeout = setTimeout(() => resolve(null), 3000);
+    const timeout = setTimeout(() => resolve(null), 1000);
     const getter = REGISTRY_URL.startsWith("http://") ? httpGet : httpsGet;
     const req = getter(
       REGISTRY_URL,
@@ -1419,6 +1448,10 @@ function promptYesNo(question: string, defaultValue = false): Promise<boolean> {
         finish(false);
         process.exit(0);
       } // Ctrl+C
+      if (ch === "\x1b") {
+        finish(false);
+        return;
+      } // ESC = no
 
       const yn = ch.toLowerCase().match(/[yn]/);
       if (yn) {
@@ -1621,7 +1654,7 @@ async function checkForUpdate(): Promise<void> {
   if (!latest || !isStrictlyNewerVersion(PKG_VERSION, latest)) return;
 
   process.stdout.write(
-    `\n${YELLOW}  Update available: ${D}${PKG_VERSION}${R} → ${GREEN}${latest}${R}\n`,
+    `\n${YELLOW}  Update available: ${D}${PKG_VERSION}${R} \u2192 ${GREEN}${latest}${R}\n`,
   );
 
   const yes = await promptYesNo(`${D}  Update now? (Y/n, default: n): ${R}`);
@@ -1635,22 +1668,15 @@ async function checkForUpdate(): Promise<void> {
     const ok = await runGlobalUpdate(command);
     if (!ok) throw new Error("update command failed");
     process.stdout.write(
-      `${GREEN}  ✓ Updated to ${latest}. Restarting frouter now...${R}
-
-`,
+      `${GREEN}  \u2713 Updated to ${latest}. Restarting frouter now...${R}\n\n`,
     );
     if (restartAfterUpdate()) return;
     process.stdout.write(
-      `${YELLOW}  ! Update finished, but restart failed. Run frouter manually to use ${latest}.${R}
-
-`,
+      `${YELLOW}  ! Update finished, but restart failed. Run frouter manually to use ${latest}.${R}\n\n`,
     );
   } catch {
     process.stdout.write(
-      `${RED}  ✗ Update failed. Run manually: npm install -g frouter-cli${R}
-${D}    (or: bun install -g frouter-cli)${R}
-
-`,
+      `${RED}  \u2717 Update failed. Run manually: npm install -g frouter-cli${R}\n${D}    (or: bun install -g frouter-cli)${R}\n\n`,
     );
   }
 }
@@ -1734,8 +1760,28 @@ async function main() {
   config = loadConfig();
   userScrollSortPauseMs = resolveUserScrollSortPauseMs(config);
 
-  if (!Object.keys(config.apiKeys || {}).length) {
-    config = await runFirstRunWizard(config);
+  if (!Object.keys(config.apiKeys || {}).length && process.stdin.isTTY) {
+    const React = await import("react");
+    const { render: inkRender } = await import("ink");
+    const { FirstRunApp } = await import("../tui/FirstRunApp.js");
+    const { openBrowser } = await import("../lib/config.js");
+
+    const apiKeys = await new Promise<Record<string, string>>((done) => {
+      const instance = inkRender(
+        React.createElement(FirstRunApp, {
+          providers: PROVIDERS_META,
+          validateKey: validateProviderApiKey,
+          openBrowser,
+          onDone: (keys: Record<string, string>) => {
+            instance.unmount();
+            done(keys);
+          },
+        }),
+      );
+    });
+
+    Object.assign(config.apiKeys ??= {}, apiKeys);
+    saveConfig(config);
   }
 
   await checkForUpdate();
