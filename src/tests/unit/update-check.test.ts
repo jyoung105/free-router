@@ -398,12 +398,12 @@ test(
 );
 
 test(
-  "update check: simulated 1.1.11 publish updates global binary and restart sees new version",
+  "update check: simulated 1.1.12 publish updates global binary and restart sees new version",
   { skip: SKIP_PTY && "PTY harness not available on Windows" },
   async () => {
     const server = await createHttpServer((_req, res) => {
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ version: "1.1.11" }));
+      res.end(JSON.stringify({ version: "1.1.12" }));
     });
 
     // Save original package.json to restore later
@@ -427,10 +427,10 @@ case "$1" in
   --version) echo "10.0.0"; exit 0 ;;
   install)
     echo "$@" > "$HOME/update-invoked.log"
-    # Simulate global install by updating package.json version to 1.1.11
+    # Simulate global install by updating package.json version to 1.1.12
     PKG="\${FROUTER_PKG_PATH}"
     if [ -n "$PKG" ]; then
-      sed 's/"version": *"[^"]*"/"version": "1.1.11"/' "$PKG" > "$PKG.tmp" && mv "$PKG.tmp" "$PKG"
+      sed 's/"version": *"[^"]*"/"version": "1.1.12"/' "$PKG" > "$PKG.tmp" && mv "$PKG.tmp" "$PKG"
     fi
     exit 0
     ;;
@@ -461,8 +461,8 @@ esac
 
       // Verify update flow
       assert.match(result.stdout, /Update available/);
-      assert.match(result.stdout, /1\.1\.11/);
-      assert.match(result.stdout, /Updated to 1\.1\.11/);
+      assert.match(result.stdout, /1\.1\.12/);
+      assert.match(result.stdout, /Updated to 1\.1\.12/);
       assert.match(result.stdout, /Restarting frouter now/);
 
       // Verify fake npm received correct install command
@@ -474,9 +474,9 @@ esac
       // Verify "Update available" appeared only once (restarted process didn't show it)
       assert.equal((result.stdout.match(/Update available/g) || []).length, 1);
 
-      // Verify package.json was updated to 1.1.11 (simulating global binary update)
+      // Verify package.json was updated to 1.1.12 (simulating global binary update)
       const updatedPkg = JSON.parse(readFileSync(pkgPath, "utf8"));
-      assert.equal(updatedPkg.version, "1.1.11");
+      assert.equal(updatedPkg.version, "1.1.12");
     } finally {
       // Restore original package.json
       writeFileSync(pkgPath, originalPkg);
