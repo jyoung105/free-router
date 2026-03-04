@@ -715,11 +715,98 @@ function resetSettingsState() {
 function enterTargetPickerFromSelection() {
   if (!filtered.length) return false;
   selModel = filtered[cursor];
-  tCursor = 0;
-  tNotice = "";
   searchMode = false;
-  screen = "target";
+  screen = "ink-subapp";
+  void openTargetPickerInk();
   return true;
+}
+
+async function openTargetPickerInk() {
+  const React = await import("react");
+  const { TargetPickerApp } = await import("../tui/TargetPickerApp.js");
+  const { runInkSubApp } = await import("../tui/ink-harness.js");
+
+  const result = await runInkSubApp<import("../tui/TargetPickerApp.js").TargetPickerResult>(
+    (resolve) =>
+      React.createElement(TargetPickerApp, {
+        modelName: selModel?.displayName || selModel?.id || "?",
+        modelFullId: selModel ? `${selModel.providerKey}/${selModel.id}` : "",
+        targets: TARGETS,
+        onDone: resolve,
+      }),
+    {
+      beforeMount: () => prepareForInkSubApp(),
+      afterUnmount: () => {
+        // Minimal teardown — caller controls what happens next.
+        try { process.stdin.setRawMode(true); } catch { /* best-effort */ }
+        process.stdin.setEncoding("utf8");
+      },
+    },
+  );
+
+  // ── Cancelled ──
+  if (result.action !== "selected") {
+    restoreAfterInkSubApp("main");
+    restartLoop();
+    return;
+  }
+
+  // Write config and optionally launch
+  const { openCodeModel, openCodePk, openCodeApiKey, notice: resolveNotice } =
+    resolveOpenCodeApplySelection(selModel);
+  if (resolveNotice) w(resolveNotice + "\n");
+
+  let launch = result.launch;
+
+  try {
+    const writtenPath = writeOpenCode(openCodeModel, openCodePk, openCodeApiKey, {
+      persistApiKey: ALLOW_PLAINTEXT_KEY_EXPORT,
+    });
+    w(`${GREEN} \u2713 OpenCode config written \u2192 ${writtenPath}${R}\n`);
+    const authHint = getOpenCodeAuthHint(openCodePk, openCodeApiKey, { launch });
+    if (authHint) w(authHint + "\n");
+  } catch (err: any) {
+    w(`${RED} \u2717 OpenCode write failed: ${err.message}${R}\n`);
+    setTimeout(() => { restoreAfterInkSubApp("main"); restartLoop(); }, 1400);
+    return;
+  }
+
+  // Guard: missing API key → ask before launching
+  if (launch && !openCodeApiKey) {
+    const meta = PROVIDERS_META[openCodePk];
+    const envVar = meta?.envVar || "API key";
+    w(`\n${YELLOW} ! Missing ${meta?.name || openCodePk} API key (${envVar}).${R}\n`);
+    const proceed = await promptYesNoFromTarget(
+      `${D}   Launch opencode anyway? (Y/n, default: n): ${R}`,
+    );
+    if (!proceed) {
+      w(`${YELLOW} Launch cancelled. Set ${envVar} in Settings (P), then retry.${R}\n`);
+      launch = false;
+    }
+  }
+
+  if (launch) {
+    if (!isOpenCodeInstalled()) {
+      w(`${YELLOW} ! opencode is not installed. Install from https://github.com/opencode-ai/opencode${R}\n`);
+      setTimeout(() => { restoreAfterInkSubApp("main"); restartLoop(); }, 1400);
+      return;
+    }
+    const { spawnSync } = await import("node:child_process");
+    const launchEnv = buildOpenCodeLaunchEnv(openCodePk, openCodeApiKey);
+    cleanup();
+    const proc = spawnSync("opencode", [], {
+      stdio: "inherit",
+      shell: true,
+      env: launchEnv,
+    });
+    process.exit(Number.isInteger(proc.status) ? proc.status : 1);
+  }
+
+  // ── Save-only path: show messages briefly, then restore main TUI ──
+  setTimeout(() => {
+    restoreAfterInkSubApp("main");
+    restartLoop();
+  }, 1400);
 }
 
 function resolveOpenCodeApplySelection(selectedModel) {
@@ -879,12 +966,39 @@ function resolveQuickApiKeyProviderIndex() {
 }
 
 function openApiKeyEditorFromMain() {
-  stopPingLoop(pingRef);
-  sCursor = resolveQuickApiKeyProviderIndex();
-  resetSettingsState();
-  sEditing = true;
   searchMode = false;
-  screen = "settings";
+  screen = "ink-subapp";
+  void openSettingsInk("editKey");
+}
+
+async function openSettingsInk(initialMode: "navigate" | "editKey" = "navigate") {
+  const React = await import("react");
+  const { SettingsApp } = await import("../tui/SettingsApp.js");
+  const { runInkSubApp } = await import("../tui/ink-harness.js");
+
+  const result = await runInkSubApp<{ config: any }>(
+    (resolve) =>
+      React.createElement(SettingsApp, {
+        config,
+        providers: PROVIDERS_META,
+        getApiKey,
+        validateKey: validateProviderApiKey,
+        saveConfig,
+        ping,
+        initialMode,
+        onDone: resolve,
+      }),
+    {
+      beforeMount: () => prepareForInkSubApp(),
+      afterUnmount: () => restoreAfterInkSubApp("main"),
+    },
+  );
+
+  config = result.config;
+  void refreshModels().then(() => {
+    restartLoop();
+    renderWithAuthority("refresh-complete");
+  });
 }
 
 function handleMain(ch) {
@@ -941,12 +1055,13 @@ function handleMain(ch) {
   } else if (ch === "\r") {
     enterTargetPickerFromSelection();
   } else if (ch === "p" || ch === "P") {
-    stopPingLoop(pingRef);
-    sCursor = 0;
-    resetSettingsState();
-    screen = "settings";
+    searchMode = false;
+    screen = "ink-subapp";
+    void openSettingsInk("navigate");
+    return;
   } else if (ch === "a" || ch === "A") {
     openApiKeyEditorFromMain();
+    return;
   } else if (ch === "?") {
     screen = "help";
   } else if (ch === "q") {
@@ -1352,6 +1467,33 @@ function restartLoop() {
   );
 }
 
+// ─── Ink sub-app lifecycle helpers ─────────────────────────────────────────────
+// Used by runInkSubApp hooks to safely transition between raw ANSI and Ink rendering.
+
+function prepareForInkSubApp() {
+  process.stdin.removeListener("data", onData);
+  if (escTimer) { clearTimeout(escTimer); escTimer = null; }
+  escBuf = "";
+  if (_renderTimer) { clearTimeout(_renderTimer); _renderTimer = null; }
+  screen = "ink-subapp";
+  stopPingLoop(pingRef);
+  // Don't change raw mode — the harness manages stdin via a proxy stream.
+  w(ALT_OFF + SHOWC);
+}
+
+function restoreAfterInkSubApp(returnScreen = "main") {
+  w(ALT_ON + HIDEC);
+  // The harness manages stdin directly (proxy pattern), so process.stdin
+  // is still in raw/flowing/data-listener mode from prepareForInkSubApp's teardown.
+  // We just need to re-attach our handler and restore raw mode.
+  try { process.stdin.setRawMode(true); } catch { /* best-effort */ }
+  process.stdin.setEncoding("utf8");
+  process.stdin.on("data", onData);
+  process.stdin.resume();
+  screen = returnScreen;
+  renderWithAuthority("settings-exit");
+}
+
 // ─── Update check ────────────────────────────────────────────────────────────
 const REGISTRY_URL =
   process.env.FROUTER_REGISTRY_URL ||
@@ -1419,6 +1561,10 @@ function promptYesNo(question: string, defaultValue = false): Promise<boolean> {
         finish(false);
         process.exit(0);
       } // Ctrl+C
+      if (ch === "\x1b") {
+        finish(false);
+        return;
+      } // ESC = no
 
       const yn = ch.toLowerCase().match(/[yn]/);
       if (yn) {
@@ -1621,7 +1767,7 @@ async function checkForUpdate(): Promise<void> {
   if (!latest || !isStrictlyNewerVersion(PKG_VERSION, latest)) return;
 
   process.stdout.write(
-    `\n${YELLOW}  Update available: ${D}${PKG_VERSION}${R} → ${GREEN}${latest}${R}\n`,
+    `\n${YELLOW}  Update available: ${D}${PKG_VERSION}${R} \u2192 ${GREEN}${latest}${R}\n`,
   );
 
   const yes = await promptYesNo(`${D}  Update now? (Y/n, default: n): ${R}`);
@@ -1635,22 +1781,15 @@ async function checkForUpdate(): Promise<void> {
     const ok = await runGlobalUpdate(command);
     if (!ok) throw new Error("update command failed");
     process.stdout.write(
-      `${GREEN}  ✓ Updated to ${latest}. Restarting frouter now...${R}
-
-`,
+      `${GREEN}  \u2713 Updated to ${latest}. Restarting frouter now...${R}\n\n`,
     );
     if (restartAfterUpdate()) return;
     process.stdout.write(
-      `${YELLOW}  ! Update finished, but restart failed. Run frouter manually to use ${latest}.${R}
-
-`,
+      `${YELLOW}  ! Update finished, but restart failed. Run frouter manually to use ${latest}.${R}\n\n`,
     );
   } catch {
     process.stdout.write(
-      `${RED}  ✗ Update failed. Run manually: npm install -g frouter-cli${R}
-${D}    (or: bun install -g frouter-cli)${R}
-
-`,
+      `${RED}  \u2717 Update failed. Run manually: npm install -g frouter-cli${R}\n${D}    (or: bun install -g frouter-cli)${R}\n\n`,
     );
   }
 }
@@ -1734,8 +1873,28 @@ async function main() {
   config = loadConfig();
   userScrollSortPauseMs = resolveUserScrollSortPauseMs(config);
 
-  if (!Object.keys(config.apiKeys || {}).length) {
-    config = await runFirstRunWizard(config);
+  if (!Object.keys(config.apiKeys || {}).length && process.stdin.isTTY) {
+    const React = await import("react");
+    const { render: inkRender } = await import("ink");
+    const { FirstRunApp } = await import("../tui/FirstRunApp.js");
+    const { openBrowser } = await import("../lib/config.js");
+
+    const apiKeys = await new Promise<Record<string, string>>((done) => {
+      const instance = inkRender(
+        React.createElement(FirstRunApp, {
+          providers: PROVIDERS_META,
+          validateKey: validateProviderApiKey,
+          openBrowser,
+          onDone: (keys: Record<string, string>) => {
+            instance.unmount();
+            done(keys);
+          },
+        }),
+      );
+    });
+
+    Object.assign(config.apiKeys ??= {}, apiKeys);
+    saveConfig(config);
   }
 
   await checkForUpdate();
