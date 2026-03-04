@@ -802,10 +802,10 @@ test(
 
       const result = await runInPty(process.execPath, [BIN_PATH], {
         cwd: ROOT_DIR,
-        env: { HOME: home, FROUTER_NO_FETCH: "1", FROUTER_SKIP_UPDATE_ONCE: "1" },
+        env: { HOME: home, FROUTER_NO_FETCH: "1" },
         inputChunks: [
-          { delayMs: 3000, data: "a" },
-          ...buildInputChunks([..."bad-prefix", "\r", "\x1b", "q", "q"], 3700, 120),
+          { delayMs: 850, data: "a" },
+          ...buildInputChunks([..."bad-prefix", "\r", "\x1b", "q", "q"], 1500, 120),
         ],
         timeoutMs: 12_000,
       });
