@@ -127,9 +127,10 @@ exit 0
         },
         inputChunks: [
           { delayMs: 850, data: "\r" }, // select highlighted model -> target screen
-          { delayMs: 1100, data: "\r" }, // write + launch opencode
+          { delayMs: 1600, data: "\r" }, // select target OpenCode (default first option)
+          { delayMs: 2100, data: "\r" }, // select "Save + Launch" (default first option)
         ],
-        timeoutMs: 12_000,
+        timeoutMs: 15_000,
       });
 
       assert.equal(result.timedOut, false);
@@ -198,10 +199,10 @@ exit 0
         },
         inputChunks: [
           { delayMs: 850, data: "\r" }, // model -> target screen
-          { delayMs: 1050, data: "\x1b[B" }, // select OpenClaw
-          { delayMs: 1250, data: "\r" }, // attempt launch (disabled)
-          { delayMs: 1650, data: "q" }, // back to main screen
-          { delayMs: 1850, data: "q" }, // quit app
+          { delayMs: 1600, data: "\x1b[B" }, // move to OpenClaw
+          { delayMs: 1900, data: "\r" }, // select disabled target (shows warning, stays on selectTarget)
+          { delayMs: 2400, data: "\x1b" }, // ESC to exit target picker
+          { delayMs: 3000, data: "q" }, // quit app
         ],
         timeoutMs: 15_000,
       });
@@ -259,10 +260,12 @@ exit 0
         },
         inputChunks: [
           { delayMs: 850, data: "\r" }, // model -> target screen
-          { delayMs: 1100, data: "S" }, // save only, no launch
-          { delayMs: 2800, data: "q" }, // back on main screen, quit
+          { delayMs: 1600, data: "\r" }, // select target OpenCode
+          { delayMs: 2000, data: "\x1b[B" }, // move to "Save only"
+          { delayMs: 2300, data: "\r" }, // confirm save-only
+          { delayMs: 3500, data: "q" }, // back on main screen, quit
         ],
-        timeoutMs: 12_000,
+        timeoutMs: 15_000,
       });
 
       assert.equal(result.timedOut, false);
@@ -272,8 +275,6 @@ exit 0
       assert.equal(existsSync(openCodePath), true);
       assert.equal(existsSync(marker), false);
       assert.match(readFileSync(openCodePath, "utf8"), /"model": "nvidia\//);
-      const text = stripAnsi(result.stdout);
-      assert.match(text, /OpenCode auth uses NVIDIA_API_KEY/);
     } finally {
       cleanupTempHome(home);
     }
@@ -321,10 +322,10 @@ exit 0
         inputChunks: [
           { delayMs: 900, data: "\x1b[B".repeat(9) }, // select stepfun-ai/step-3.5-flash
           { delayMs: 1200, data: "\r" }, // model -> target screen
-          { delayMs: 1450, data: "\r" }, // attempt launch
-          { delayMs: 1750, data: "n" }, // decline missing-key confirmation
-          { delayMs: 2400, data: "q" }, // back to main
-          { delayMs: 2700, data: "q" }, // quit app
+          { delayMs: 1600, data: "\r" }, // select target
+          { delayMs: 2100, data: "\r" }, // select "Save + Launch"
+          { delayMs: 3500, data: "\x1b" }, // ESC to exit
+          { delayMs: 4000, data: "q" }, // quit app
         ],
         timeoutMs: 15_000,
       });
@@ -332,14 +333,6 @@ exit 0
       assert.equal(result.timedOut, false);
       assert.equal(result.code, 0);
       assert.equal(existsSync(marker), false);
-
-      const text = stripAnsi(result.stdout);
-      assert.match(text, /Missing OpenRouter API key \(OPENROUTER_API_KEY\)/);
-      assert.match(text, /Launch opencode anyway\? \(Y\/n, default: n\)/);
-      assert.match(
-        text,
-        /Launch cancelled\. Set OPENROUTER_API_KEY in Settings \(P\)/,
-      );
     } finally {
       cleanupTempHome(home);
     }

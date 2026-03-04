@@ -354,10 +354,10 @@ test(
           { delayMs: 850, data: "j" },
           { delayMs: 980, data: "j" }, // rank 3 in top section
           { delayMs: 1200, data: "P" }, // open settings
-          { delayMs: 1400, data: " " }, // nvidia off
-          { delayMs: 1600, data: " " }, // nvidia on (simulated refresh trigger)
-          { delayMs: 1800, data: "\x1b" }, // back to main -> refreshModels()
-          { delayMs: 3200, data: "q" },
+          { delayMs: 1900, data: " " }, // nvidia off (wait for Ink mount)
+          { delayMs: 2100, data: " " }, // nvidia on (simulated refresh trigger)
+          { delayMs: 2400, data: "\x1b" }, // back to main -> refreshModels()
+          { delayMs: 3800, data: "q" },
         ],
         timeoutMs: 15_000,
       });
@@ -429,8 +429,8 @@ test(
           { delayMs: 850, data: "j" },
           { delayMs: 980, data: "j" }, // rank 3 while user is in top section
           { delayMs: 1200, data: "P" }, // open settings
-          { delayMs: 1800, data: "\x1b" }, // back to main -> refreshModels()
-          { delayMs: 3300, data: "q" },
+          { delayMs: 1900, data: "\x1b" }, // back to main -> refreshModels() (wait for Ink mount)
+          { delayMs: 3500, data: "q" },
         ],
         timeoutMs: 15_000,
       });
@@ -554,13 +554,10 @@ test(
       const result = await runInPty(process.execPath, [BIN_PATH], {
         cwd: ROOT_DIR,
         env: { HOME: home, FROUTER_NO_FETCH: "1" },
-        inputChunks: buildInputChunks([
-          "a",
-          ..."nvapi-added-main-tab",
-          "\r",
-          "q",
-          "q",
-        ]),
+        inputChunks: [
+          { delayMs: 850, data: "a" },
+          ...buildInputChunks([..."nvapi-added-main-tab", "\r", "q", "q"], 1500, 120),
+        ],
         timeoutMs: 12_000,
       });
 
@@ -596,13 +593,10 @@ test(
       const result = await runInPty(process.execPath, [BIN_PATH], {
         cwd: ROOT_DIR,
         env: { HOME: home, FROUTER_NO_FETCH: "1" },
-        inputChunks: buildInputChunks([
-          "A",
-          ..."nvapi-new-main-tab",
-          "\r",
-          "q",
-          "q",
-        ]),
+        inputChunks: [
+          { delayMs: 850, data: "A" },
+          ...buildInputChunks([..."nvapi-new-main-tab", "\r", "q", "q"], 1500, 120),
+        ],
         timeoutMs: 12_000,
       });
 
@@ -637,14 +631,10 @@ test(
       const result = await runInPty(process.execPath, [BIN_PATH], {
         cwd: ROOT_DIR,
         env: { HOME: home, FROUTER_NO_FETCH: "1" },
-        inputChunks: buildInputChunks([
-          "a",
-          ..."bad-prefix",
-          "\r",
-          "\x1b",
-          "q",
-          "q",
-        ]),
+        inputChunks: [
+          { delayMs: 850, data: "a" },
+          ...buildInputChunks([..."bad-prefix", "\r", "\x1b", "q", "q"], 1500, 120),
+        ],
         timeoutMs: 12_000,
       });
 
