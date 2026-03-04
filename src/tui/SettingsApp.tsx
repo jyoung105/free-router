@@ -1,9 +1,9 @@
-// src/tui/SettingsApp.tsx — Ink-based settings screen with Select + PasswordInput + Spinner.
+// src/tui/SettingsApp.tsx — Ink-based settings screen with PasswordInput + Spinner.
 // Uses ink-harness (runs mid-session from ALT_ON state).
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Text, Box, useInput } from "ink";
-import { Select, PasswordInput, StatusMessage } from "@inkjs/ui";
+import { PasswordInput, StatusMessage } from "@inkjs/ui";
 
 type ProviderMeta = {
   name: string;
@@ -197,17 +197,14 @@ export function SettingsApp({
     }
   });
 
-  const providerOptions = pks.map((pk) => {
+  const providerRows = pks.map((pk) => {
     const meta = providers[pk];
     const enabled = config.providers?.[pk]?.enabled !== false;
     const apiKey = getApiKey(config, pk);
     const status = enabled ? "[ON]" : "[OFF]";
-    const keyHint = apiKey ? `${apiKey.slice(0, 4)}****` : "(no key)";
-    const testHint = testResults[pk] ? ` [${testResults[pk]}]` : "";
-    return {
-      label: `${status} ${meta.name}  ${keyHint}${testHint}`,
-      value: pk,
-    };
+    const testHint = testResults[pk] || "";
+    const isFocused = pk === selectedPk;
+    return { pk, meta, apiKey, status, testHint, isFocused };
   });
 
   function moveSelection(delta: number) {
@@ -246,13 +243,16 @@ export function SettingsApp({
       <Text dimColor>{"\n"}  {"\u2191\u2193"}:navigate  Enter:edit key  Space:toggle  T:test  D:delete  ESC/Q:back</Text>
 
       <Box marginTop={1} flexDirection="column">
-        {mode === "navigate" && (
-          <Select
-            options={providerOptions}
-            defaultValue={selectedPk}
-            onChange={(val) => setSelectedPk(val)}
-          />
-        )}
+        {mode === "navigate" && providerRows.map(({ pk, meta, apiKey, status, testHint, isFocused }) => (
+          <Box key={pk}>
+            <Text>{isFocused ? "❯ " : "  "}</Text>
+            <Text bold={isFocused}>{status} {meta.name}  </Text>
+            {apiKey
+              ? <Text>{apiKey.slice(0, 4)}****</Text>
+              : <Text color="red" bold>(no key)</Text>}
+            {testHint ? <Text> [{testHint}]</Text> : null}
+          </Box>
+        ))}
 
         {mode === "editKey" && (
           <Box flexDirection="column">
