@@ -11,6 +11,7 @@ import {
   validateProviderApiKey,
   openBrowser,
 } from "../lib/config.js";
+import type { FirstRunResult } from "../tui/FirstRunApp.js";
 import { getAllModels } from "../lib/models.js";
 import {
   ping,
@@ -151,6 +152,8 @@ let autoSortPauseUntil = 0;
 const DEFAULT_USER_SCROLL_SORT_PAUSE_MS = 1500;
 let userScrollSortPauseMs = DEFAULT_USER_SCROLL_SORT_PAUSE_MS;
 let renderAuthorityViolations = 0;
+let starPromptHandledThisLaunch = false;
+let startupSearchRequestedThisLaunch = false;
 
 // ─── Geometry ──────────────────────────────────────────────────────────────────
 const DEFAULT_COLS = 80;
@@ -694,6 +697,32 @@ function resetSearchState() {
   scrollOff = 0;
 }
 
+function enterSearchMode() {
+  resetSearchState();
+  searchMode = true;
+  applyFilters();
+}
+
+function consumeStartupSearchRequestFromEnv(): boolean {
+  const requested = process.env[OPEN_SEARCH_ON_START_ENV] === "1";
+  delete process.env[OPEN_SEARCH_ON_START_ENV];
+  return requested;
+}
+
+function markStartupSearchRequested() {
+  startupSearchRequestedThisLaunch = true;
+}
+
+function handleGithubStarAccepted() {
+  starPromptHandledThisLaunch = true;
+  markStartupSearchRequested();
+  openBrowser(GITHUB_REPO_URL);
+}
+
+function handleGithubStarDeclined() {
+  starPromptHandledThisLaunch = true;
+}
+
 function _resetSettingsState() {
   sEditing = false;
   sKeyBuf = "";
@@ -1023,9 +1052,7 @@ function handleMain(ch) {
 
   // Actions
   else if (ch === "/") {
-    resetSearchState();
-    searchMode = true;
-    applyFilters();
+    enterSearchMode();
   } else if (ch === "\r") {
     enterTargetPickerFromSelection();
   } else if (ch === "p" || ch === "P") {
@@ -1386,7 +1413,9 @@ const REGISTRY_URL =
   process.env.FROUTER_REGISTRY_URL ||
   "https://registry.npmjs.org/frouter-cli/latest";
 const UPDATE_SKIP_ONCE_ENV = "FROUTER_SKIP_UPDATE_ONCE";
+const OPEN_SEARCH_ON_START_ENV = "FROUTER_OPEN_SEARCH_ON_START";
 const UPDATE_PACKAGE_NAME = "frouter-cli";
+const GITHUB_REPO_URL = "https://github.com/jyoung105/frouter";
 
 type UpdateInstallCommand = {
   bin: string;
@@ -1464,6 +1493,10 @@ function promptYesNo(question: string, defaultValue = false): Promise<boolean> {
     }
     process.stdin.on("data", handler);
   });
+}
+
+function promptGithubStarSupport(): Promise<boolean> {
+  return promptYesNo(`${D}  Support for github star: [Y/n] ${R}`, true);
 }
 
 const UPDATE_BAR_WIDTH = 24;
@@ -1576,10 +1609,10 @@ function detectUpdateInstallCommand(): UpdateInstallCommand | null {
   return null;
 }
 
-function restartAfterUpdate(): boolean {
+function restartAfterUpdate(extraEnv: NodeJS.ProcessEnv = {}): boolean {
   const restarted = spawnSync(process.execPath, process.argv.slice(1), {
     stdio: "inherit",
-    env: { ...process.env, [UPDATE_SKIP_ONCE_ENV]: "1" },
+    env: { ...process.env, [UPDATE_SKIP_ONCE_ENV]: "1", ...extraEnv },
   });
   if (restarted.error) return false;
   if (restarted.signal) process.exit(1);
@@ -1667,10 +1700,19 @@ async function checkForUpdate(): Promise<void> {
     if (!command) throw new Error("no supported updater");
     const ok = await runGlobalUpdate(command);
     if (!ok) throw new Error("update command failed");
+    if (!starPromptHandledThisLaunch) {
+      const support = await promptGithubStarSupport();
+      if (support) handleGithubStarAccepted();
+      else handleGithubStarDeclined();
+    }
     process.stdout.write(
       `${GREEN}  \u2713 Updated to ${latest}. Restarting frouter now...${R}\n\n`,
     );
-    if (restartAfterUpdate()) return;
+    const restartEnv =
+      startupSearchRequestedThisLaunch
+        ? { [OPEN_SEARCH_ON_START_ENV]: "1" }
+        : {};
+    if (restartAfterUpdate(restartEnv)) return;
     process.stdout.write(
       `${YELLOW}  ! Update finished, but restart failed. Run frouter manually to use ${latest}.${R}\n\n`,
     );
@@ -1764,24 +1806,25 @@ async function main() {
     const React = await import("react");
     const { render: inkRender } = await import("ink");
     const { FirstRunApp } = await import("../tui/FirstRunApp.js");
-    const { openBrowser } = await import("../lib/config.js");
 
-    const apiKeys = await new Promise<Record<string, string>>((done) => {
+    const firstRun = await new Promise<FirstRunResult>((done) => {
       const instance = inkRender(
         React.createElement(FirstRunApp, {
           providers: PROVIDERS_META,
           validateKey: validateProviderApiKey,
           openBrowser,
-          onDone: (keys: Record<string, string>) => {
+          onDone: (result: FirstRunResult) => {
             instance.unmount();
-            done(keys);
+            done(result);
           },
         }),
       );
     });
 
-    Object.assign(config.apiKeys ??= {}, apiKeys);
+    Object.assign(config.apiKeys ??= {}, firstRun.apiKeys);
     saveConfig(config);
+    starPromptHandledThisLaunch = firstRun.starPromptHandled;
+    startupSearchRequestedThisLaunch = firstRun.startupSearchRequested;
   }
 
   await checkForUpdate();
@@ -1807,6 +1850,10 @@ async function main() {
 
   renderWithAuthority("startup"); // show loading state immediately
   await refreshModels();
+  const shouldOpenSearch =
+    consumeStartupSearchRequestFromEnv() || startupSearchRequestedThisLaunch;
+  startupSearchRequestedThisLaunch = false;
+  if (shouldOpenSearch) enterSearchMode();
   restartLoop();
   renderWithAuthority("refresh-complete");
 }
