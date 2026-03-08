@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   chmodSync,
+  existsSync,
   mkdirSync,
   readFileSync,
   writeFileSync,
@@ -16,7 +17,7 @@ import {
   writeHomeConfig,
 } from "../helpers/temp-home.js";
 import { runNode } from "../helpers/spawn-cli.js";
-import { runInPty } from "../helpers/run-pty.js";
+import { runInPty, stripAnsi } from "../helpers/run-pty.js";
 
 const PKG_VERSION = JSON.parse(
   readFileSync(join(ROOT_DIR, "..", "package.json"), "utf8"),
@@ -24,6 +25,33 @@ const PKG_VERSION = JSON.parse(
 
 function makeConfig(home: string) {
   writeHomeConfig(home, defaultConfig({ apiKeys: { nvidia: "nvapi-test" } }));
+}
+
+function prepareFakeBrowserLauncher(homePath: string) {
+  const cmd =
+    process.platform === "darwin"
+      ? "open"
+      : process.platform === "linux"
+        ? "xdg-open"
+        : null;
+
+  if (!cmd) return null;
+
+  const binDir = join(homePath, "fake-browser-bin");
+  const logPath = join(homePath, "fake-browser.log");
+  mkdirSync(binDir, { recursive: true });
+
+  const launcher = join(binDir, cmd);
+  writeFileSync(
+    launcher,
+    `#!/bin/sh
+echo "$@" >> "${logPath}"
+exit 0
+`,
+    { mode: 0o755 },
+  );
+
+  return { binDir, logPath };
 }
 
 test("update check: skips silently when version matches", async () => {
@@ -158,6 +186,7 @@ test(
       makeConfig(home);
       const fakeBin = join(home, "fake-bin");
       const marker = join(home, "update-invoked.log");
+      const fakeBrowser = prepareFakeBrowserLauncher(home);
       const npmBin = join(fakeBin, "npm");
       mkdirSync(fakeBin, { recursive: true });
       writeFileSync(
@@ -173,16 +202,19 @@ exit 0
         cwd: ROOT_DIR,
         env: {
           HOME: home,
-          PATH: `${fakeBin}:${process.env.PATH || ""}`,
+          PATH: `${fakeBin}${fakeBrowser ? `:${fakeBrowser.binDir}` : ""}:${process.env.PATH || ""}`,
           FROUTER_REGISTRY_URL: `${server.baseUrl}/frouter-cli/latest`,
+          FROUTER_NO_FETCH: "1",
           npm_config_user_agent: "",
           npm_execpath: "",
         },
         // Send y+Enter together to simulate terminals that coalesce chars.
-        // Then send q to exit the TUI after update completes.
+        // Then accept the star prompt and quit after restart.
         inputChunks: [
           { delayMs: 2000, data: "y\r" },
-          { delayMs: 6000, data: "q" },
+          { delayMs: 3600, data: "y\r" },
+          { delayMs: 7600, data: "\x1b" },
+          { delayMs: 12000, data: "q" },
         ],
         timeoutMs: 20_000,
       });
@@ -191,6 +223,7 @@ exit 0
       assert.match(result.stdout, /Update available/);
       assert.match(result.stdout, /Update now\? \(Y\/n, default: n\):/);
       assert.match(result.stdout, /Updating frouter-cli/);
+      assert.match(result.stdout, /Support for github star: \[Y\/n\]/);
       assert.match(result.stdout, /\d{1,3}%/);
       assert.match(result.stdout, /Updated to 99\.0\.0/);
       assert.match(result.stdout, /Restarting frouter now/);
@@ -199,6 +232,78 @@ exit 0
         readFileSync(marker, "utf8").trim(),
         "install -g frouter-cli",
       );
+      if (fakeBrowser) {
+        assert.match(
+          readFileSync(fakeBrowser.logPath, "utf8"),
+          /https:\/\/github\.com\/jyoung105\/frouter/,
+        );
+      }
+      assert.match(stripAnsi(result.stdout), /\/_/);
+    } finally {
+      cleanupTempHome(home);
+      await server.close();
+    }
+  },
+);
+
+test(
+  "update check: star prompt treats ESC as no after successful update",
+  { skip: SKIP_PTY && "PTY harness not available on Windows" },
+  async () => {
+    const server = await createHttpServer((_req, res) => {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ version: "99.0.0" }));
+    });
+
+    const home = makeTempHome();
+    try {
+      makeConfig(home);
+      const fakeBin = join(home, "fake-bin");
+      const marker = join(home, "update-invoked.log");
+      const fakeBrowser = prepareFakeBrowserLauncher(home);
+      const npmBin = join(fakeBin, "npm");
+      mkdirSync(fakeBin, { recursive: true });
+      writeFileSync(
+        npmBin,
+        `#!/bin/sh
+echo "$@" > "$HOME/update-invoked.log"
+exit 0
+`,
+      );
+      chmodSync(npmBin, 0o755);
+
+      const result = await runInPty(process.execPath, [BIN_PATH], {
+        cwd: ROOT_DIR,
+        env: {
+          HOME: home,
+          PATH: `${fakeBin}${fakeBrowser ? `:${fakeBrowser.binDir}` : ""}:${process.env.PATH || ""}`,
+          FROUTER_REGISTRY_URL: `${server.baseUrl}/frouter-cli/latest`,
+          FROUTER_NO_FETCH: "1",
+          npm_config_user_agent: "",
+          npm_execpath: "",
+        },
+        inputChunks: [
+          { delayMs: 2000, data: "y\r" },
+          { delayMs: 3600, data: "\x1b" },
+          { delayMs: 7600, data: "q" },
+        ],
+        timeoutMs: 20_000,
+      });
+
+      assert.equal(result.timedOut, false);
+      assert.match(result.stdout, /Support for github star: \[Y\/n\]/);
+      assert.match(result.stdout, /Updated to 99\.0\.0/);
+      assert.equal(
+        readFileSync(marker, "utf8").trim(),
+        "install -g frouter-cli",
+      );
+      if (fakeBrowser) {
+        const browserLog = existsSync(fakeBrowser.logPath)
+          ? readFileSync(fakeBrowser.logPath, "utf8")
+          : "";
+        assert.doesNotMatch(browserLog, /https:\/\/github\.com\/jyoung105\/frouter/);
+      }
+      assert.doesNotMatch(stripAnsi(result.stdout), /\/_/);
     } finally {
       cleanupTempHome(home);
       await server.close();
@@ -283,6 +388,7 @@ exit 0
           HOME: home,
           PATH: `${fakeBin}:${process.env.PATH || ""}`,
           FROUTER_REGISTRY_URL: `${server.baseUrl}/frouter-cli/latest`,
+          FROUTER_NO_FETCH: "1",
           npm_config_prefix: "/tmp/bogus-prefix",
           npm_config_global_prefix: "/tmp/bogus-global",
           npm_config_user_agent: "npm/10.0.0 node/v20.0.0",
@@ -292,13 +398,15 @@ exit 0
         },
         inputChunks: [
           { delayMs: 2000, data: "y\r" },
-          { delayMs: 6000, data: "q" },
+          { delayMs: 3600, data: "n" },
+          { delayMs: 7600, data: "q" },
         ],
         timeoutMs: 20_000,
       });
 
       assert.equal(result.timedOut, false);
       assert.match(result.stdout, /Updated to 99\.0\.0/);
+      assert.match(result.stdout, /Support for github star: \[Y\/n\]/);
 
       const childEnv = readFileSync(envDump, "utf8");
       // npm_config_* vars must NOT appear in the child process
@@ -446,13 +554,16 @@ esac
           HOME: home,
           PATH: `${fakeBin}:${process.env.PATH || ""}`,
           FROUTER_REGISTRY_URL: `${server.baseUrl}/frouter-cli/latest`,
+          FROUTER_NO_FETCH: "1",
           FROUTER_PKG_PATH: pkgPath,
           npm_config_user_agent: "",
           npm_execpath: "",
         },
         inputChunks: [
           { delayMs: 2000, data: "y\r" },
-          { delayMs: 6000, data: "q" },
+          { delayMs: 3600, data: "y\r" },
+          { delayMs: 7600, data: "\x1b" },
+          { delayMs: 12000, data: "q" },
         ],
         timeoutMs: 20_000,
       });
@@ -462,8 +573,10 @@ esac
       // Verify update flow
       assert.match(result.stdout, /Update available/);
       assert.match(result.stdout, /1\.1\.12/);
+      assert.match(result.stdout, /Support for github star: \[Y\/n\]/);
       assert.match(result.stdout, /Updated to 1\.1\.12/);
       assert.match(result.stdout, /Restarting frouter now/);
+      assert.match(stripAnsi(result.stdout), /\/_/);
 
       // Verify fake npm received correct install command
       assert.equal(
