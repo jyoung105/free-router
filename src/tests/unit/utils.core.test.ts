@@ -11,6 +11,7 @@ import {
   sortModels,
   visLen,
   pad,
+  truncAnsiToWidth,
   R,
   B,
   D,
@@ -201,6 +202,16 @@ test("getVerdict: Not Found for notfound status", () => {
       status: "notfound",
     }),
     "🚫 Not Found",
+  );
+});
+
+test("getVerdict: Forbidden for forbidden status", () => {
+  assert.equal(
+    getVerdict({
+      pings: [{ code: "403", ms: 100 }],
+      status: "forbidden",
+    }),
+    "⛔ Forbidden",
   );
 });
 
@@ -420,14 +431,30 @@ test("visLen strips ANSI codes from length calculation", () => {
 });
 
 test("visLen counts emoji as 2 columns wide", () => {
-  const len = visLen("hi");
-  assert.ok(len >= 2, `expected emoji to be at least 2 columns, got ${len}`);
+  assert.equal(visLen("🚫"), 2);
 });
 
 test("visLen handles mixed ANSI + emoji + text", () => {
-  const s = `${GREEN}ok${R} done`;
-  const len = visLen(s);
-  assert.ok(len >= 7, `expected at least 7 visible columns, got ${len}`);
+  assert.equal(visLen(`${GREEN}🚫${R} done`), 7);
+});
+
+// ─── truncAnsiToWidth ────────────────────────────────────────────────────────
+
+test("truncAnsiToWidth truncates plain ASCII correctly", () => {
+  assert.equal(truncAnsiToWidth("hello", 3), "hel");
+});
+
+test("truncAnsiToWidth counts surrogate-pair emoji as width 2", () => {
+  assert.equal(truncAnsiToWidth("🚫ab", 2), "🚫");
+  assert.equal(truncAnsiToWidth("🚫ab", 3), "🚫a");
+});
+
+test("truncAnsiToWidth preserves ANSI sequences while truncating", () => {
+  assert.equal(truncAnsiToWidth(`${GREEN}ok${R}!`, 2), `${GREEN}ok${R}`);
+});
+
+test("truncAnsiToWidth handles mixed text and emoji boundaries", () => {
+  assert.equal(truncAnsiToWidth("A🚫BC", 3), "A🚫");
 });
 
 // ─── pad ─────────────────────────────────────────────────────────────────────

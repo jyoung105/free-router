@@ -1,5 +1,11 @@
 // src/lib/config.ts — BYOK key management, first-run wizard, config I/O
-import { readFileSync, writeFileSync, existsSync, copyFileSync } from "node:fs";
+import {
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  copyFileSync,
+  chmodSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { execSync } from "node:child_process";
@@ -54,6 +60,11 @@ export function loadConfig() {
     try {
       const backupPath = `${CONFIG_PATH}.corrupt-${Date.now()}`;
       copyFileSync(CONFIG_PATH, backupPath);
+      try {
+        chmodSync(backupPath, 0o600);
+      } catch {
+        /* best-effort */
+      }
       process.stderr.write(
         `Warning: malformed config at ${CONFIG_PATH}; backup saved to ${backupPath}\n`,
       );
@@ -68,6 +79,11 @@ export function saveConfig(config) {
   writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + "\n", {
     mode: 0o600,
   });
+  try {
+    chmodSync(CONFIG_PATH, 0o600);
+  } catch {
+    /* best-effort */
+  }
 }
 
 /**

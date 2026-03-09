@@ -41,7 +41,7 @@ import {
   TIER_CYCLE,
   pad,
   visLen,
-  EMOJI_RE,
+  truncAnsiToWidth,
   R,
   B,
   D,
@@ -280,30 +280,7 @@ function fullWidthLine(content, lastLine = false) {
 // Preserves escape sequences but stops emitting visible chars once the limit is reached.
 // Emoji are treated as 2 columns wide to prevent terminal line wrapping.
 function truncAnsi(s: string, maxVis: number): string {
-  let vis = 0;
-  let out = "";
-  let i = 0;
-  while (i < s.length) {
-    if (s[i] === "\x1b") {
-      // Copy the entire escape sequence verbatim (zero visible width)
-      const start = i;
-      i++; // skip ESC
-      if (i < s.length && s[i] === "[") {
-        i++; // skip [
-        while (i < s.length && s[i] >= "\x20" && s[i] <= "\x3f") i++; // params
-        if (i < s.length) i++; // final byte
-      }
-      out += s.slice(start, i);
-    } else {
-      const ch = s[i];
-      const charWidth = EMOJI_RE.test(ch) ? 2 : 1;
-      if (vis + charWidth > maxVis) break;
-      out += ch;
-      vis += charWidth;
-      i++;
-    }
-  }
-  return out;
+  return truncAnsiToWidth(s, maxVis);
 }
 
 const STARTUP_PIXEL_TITLE = [

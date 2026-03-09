@@ -204,6 +204,7 @@ export function getVerdict(model) {
   if (model.status === "ratelimit" || last?.code === "429")
     return "🔥 Overloaded";
   if (model.status === "unavailable") return "🛑 Unavailable";
+  if (model.status === "forbidden") return "⛔ Forbidden";
   if (everUp && model.status !== "up" && model.status !== "noauth")
     return "⚠️  Unstable";
   if (model.status === "notfound") return "🚫 Not Found";
@@ -348,10 +349,11 @@ const VERDICT_RANK = {
   "💀 Unusable": 4,
   "🔥 Overloaded": 5,
   "🛑 Unavailable": 6,
-  "⚠️  Unstable": 7,
-  "👻 Not Active": 8,
-  "🚫 Not Found": 9,
-  "⏳ Pending": 10,
+  "⛔ Forbidden": 7,
+  "⚠️  Unstable": 8,
+  "👻 Not Active": 9,
+  "🚫 Not Found": 10,
+  "⏳ Pending": 11,
 };
 function verdictRank(v) {
   return VERDICT_RANK[v] ?? 11;
@@ -370,13 +372,61 @@ export function findBestModel(models) {
 const ANSI_RE = /\x1b\[[0-9;]*m/g;
 export const EMOJI_RE =
   /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/u;
+const GRAPHEME_SEGMENTER =
+  typeof Intl !== "undefined" && "Segmenter" in Intl
+    ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
+    : null;
+
+export function splitGraphemes(s) {
+  const str = String(s);
+  if (!str) return [];
+  if (GRAPHEME_SEGMENTER) {
+    return Array.from(GRAPHEME_SEGMENTER.segment(str), ({ segment }) => segment);
+  }
+  return Array.from(str);
+}
+
+export function visibleWidth(s) {
+  const str = String(s);
+  if (!str) return 0;
+  if (/^[\x00-\x7f]+$/.test(str)) return str.length;
+  return EMOJI_RE.test(str) ? 2 : 1;
+}
+
+export function truncAnsiToWidth(s, maxVis) {
+  let vis = 0;
+  let out = "";
+  let i = 0;
+  while (i < s.length) {
+    if (s[i] === "\x1b") {
+      const start = i;
+      i++;
+      if (i < s.length && s[i] === "[") {
+        i++;
+        while (i < s.length && s[i] >= "\x20" && s[i] <= "\x3f") i++;
+        if (i < s.length) i++;
+      }
+      out += s.slice(start, i);
+      continue;
+    }
+
+    const [segment] = splitGraphemes(s.slice(i));
+    if (!segment) break;
+    const charWidth = visibleWidth(segment);
+    if (vis + charWidth > maxVis) break;
+    out += segment;
+    vis += charWidth;
+    i += segment.length;
+  }
+  return out;
+}
 
 export function visLen(s) {
   const stripped = String(s).replace(ANSI_RE, "");
   if (!/[^\x00-\x7f]/.test(stripped)) return stripped.length;
   let width = 0;
-  for (const ch of stripped) {
-    width += EMOJI_RE.test(ch) ? 2 : 1;
+  for (const segment of splitGraphemes(stripped)) {
+    width += visibleWidth(segment);
   }
   return width;
 }

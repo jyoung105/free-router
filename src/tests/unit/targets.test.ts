@@ -1,6 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 import { importFresh } from "../helpers/import-fresh.js";
 import { ROOT_DIR } from "../helpers/test-paths.js";
@@ -49,11 +56,32 @@ test("writeOpenCode merges provider block, sets model, and writes backup", async
     assert.equal(cfg.provider.existing.name, "legacy");
     assert.equal(cfg.provider.nvidia.options.apiKey, "{env:NVIDIA_API_KEY}");
     assert.equal(cfg.model, "nvidia/meta/llama-3.1-8b-instruct");
+    assert.equal(statSync(configPath).mode & 0o777, 0o600);
 
     const backups = readdirSync(dirname(configPath)).filter((f) =>
       f.startsWith("opencode.json.backup-"),
     );
     assert.equal(backups.length, 1);
+    assert.equal(
+      statSync(join(dirname(configPath), backups[0])).mode & 0o777,
+      0o600,
+    );
+  });
+});
+
+test("writeOpenCode rewrites existing loose-permission config to 0600", async () => {
+  await withTempTargetsModule(async ({ writeOpenCode, home }) => {
+    const configPath = join(home, ".config", "opencode", "opencode.json");
+
+    writeOpenCode({ id: "meta/llama-3.1-8b-instruct" }, "nvidia");
+    chmodSync(configPath, 0o644);
+
+    writeOpenCode(
+      { id: "mistralai/mistral-small-3.2-24b-instruct:free" },
+      "openrouter",
+    );
+
+    assert.equal(statSync(configPath).mode & 0o777, 0o600);
   });
 });
 
