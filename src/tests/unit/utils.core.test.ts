@@ -434,6 +434,10 @@ test("visLen counts emoji as 2 columns wide", () => {
   assert.equal(visLen("🚫"), 2);
 });
 
+test("visLen keeps provider badge checkmarks narrow", () => {
+  assert.equal(visLen("✓"), 1);
+});
+
 test("visLen handles mixed ANSI + emoji + text", () => {
   assert.equal(visLen(`${GREEN}🚫${R} done`), 7);
 });

@@ -372,6 +372,8 @@ export function findBestModel(models) {
 const ANSI_RE = /\x1b\[[0-9;]*m/g;
 export const EMOJI_RE =
   /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/u;
+const WIDE_EMOJI_RE =
+  /\p{Extended_Pictographic}|\p{Regional_Indicator}|\u20E3/u;
 const GRAPHEME_SEGMENTER =
   typeof Intl !== "undefined" && "Segmenter" in Intl
     ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
@@ -393,7 +395,7 @@ export function visibleWidth(s) {
   const str = String(s);
   if (!str) return 0;
   if (/^[\x00-\x7f]+$/.test(str)) return str.length;
-  return EMOJI_RE.test(str) ? 2 : 1;
+  return WIDE_EMOJI_RE.test(str) ? 2 : 1;
 }
 
 export function truncAnsiToWidth(s, maxVis) {
