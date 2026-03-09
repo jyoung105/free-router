@@ -307,7 +307,10 @@ exit 0
         const browserLog = existsSync(fakeBrowser.logPath)
           ? readFileSync(fakeBrowser.logPath, "utf8")
           : "";
-        assert.doesNotMatch(browserLog, /https:\/\/github\.com\/jyoung105\/frouter/);
+        assert.doesNotMatch(
+          browserLog,
+          /https:\/\/github\.com\/jyoung105\/frouter/,
+        );
       }
       assert.doesNotMatch(stripAnsi(result.stdout), /\/_/);
     } finally {
@@ -482,34 +485,31 @@ esac
   },
 );
 
-test(
-  "update check: FROUTER_SKIP_UPDATE_ONCE suppresses update check entirely",
-  async () => {
-    const server = await createHttpServer((_req, res) => {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ version: "99.0.0" }));
+test("update check: FROUTER_SKIP_UPDATE_ONCE suppresses update check entirely", async () => {
+  const server = await createHttpServer((_req, res) => {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ version: "99.0.0" }));
+  });
+
+  const home = makeTempHome();
+  try {
+    makeConfig(home);
+    const result = await runNode([BIN_PATH], {
+      cwd: ROOT_DIR,
+      env: {
+        HOME: home,
+        FROUTER_REGISTRY_URL: `${server.baseUrl}/frouter-cli/latest`,
+        FROUTER_SKIP_UPDATE_ONCE: "1",
+      },
+      timeoutMs: 7_000,
     });
 
-    const home = makeTempHome();
-    try {
-      makeConfig(home);
-      const result = await runNode([BIN_PATH], {
-        cwd: ROOT_DIR,
-        env: {
-          HOME: home,
-          FROUTER_REGISTRY_URL: `${server.baseUrl}/frouter-cli/latest`,
-          FROUTER_SKIP_UPDATE_ONCE: "1",
-        },
-        timeoutMs: 7_000,
-      });
-
-      assert.doesNotMatch(result.stdout + result.stderr, /Update available/);
-    } finally {
-      cleanupTempHome(home);
-      await server.close();
-    }
-  },
-);
+    assert.doesNotMatch(result.stdout + result.stderr, /Update available/);
+  } finally {
+    cleanupTempHome(home);
+    await server.close();
+  }
+});
 
 test(
   `update check: simulated ${NEXT_PKG_VERSION} publish updates global binary and restart sees new version`,
@@ -580,7 +580,10 @@ esac
 
       // Verify update flow
       assert.match(result.stdout, /Update available/);
-      assert.match(result.stdout, new RegExp(NEXT_PKG_VERSION.replaceAll(".", "\\.")));
+      assert.match(
+        result.stdout,
+        new RegExp(NEXT_PKG_VERSION.replaceAll(".", "\\.")),
+      );
       assert.match(result.stdout, /Support for github star: \[Y\/n\]/);
       assert.match(
         result.stdout,

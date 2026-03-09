@@ -48,15 +48,15 @@ restarts automatically, so you can continue without running `frouter` again.
 
 ## Ways to use frouter
 
-1. **First-run onboarding wizard**  
+1. **First-run onboarding wizard**
    Launch `frouter`, open provider websites in-browser from the wizard, paste keys, and start.
-2. **Interactive model search + apply**  
+2. **Interactive model search + apply**
    Use `/` to filter models, then `Enter` to apply directly to OpenCode config.
-3. **Quick API key rescue from main screen**  
+3. **Quick API key rescue from main screen**
    Press `A` (or `R` for expired/missing provider) to jump into key editing with auto browser opening for missing keys.
-4. **Full settings workflow**  
+4. **Full settings workflow**
    Press `P` to edit keys, toggle providers, run live key tests, and onboard missing keys provider-by-provider.
-5. **Non-interactive best-model selection**  
+5. **Non-interactive best-model selection**
    Run `frouter --best` to print the best responding model ID for scripts.
 
 ## First-run onboarding test (clean state)
@@ -84,9 +84,9 @@ This keeps the temp `HOME` path after exit for inspection.
 
 ## Providers
 
-| Provider       | Free key                                                                        |
-| -------------- | ------------------------------------------------------------------------------- |
-| **NVIDIA NIM** | [build.nvidia.com](https://build.nvidia.com/settings/api-keys) — prefix `nvapi-` |
+| Provider       | Free key                                                                             |
+| -------------- | ------------------------------------------------------------------------------------ |
+| **NVIDIA NIM** | [build.nvidia.com](https://build.nvidia.com/settings/api-keys) — prefix `nvapi-`     |
 | **OpenRouter** | [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) — prefix `sk-or-` |
 
 API key priority: environment variable → `~/.frouter.json` → keyless ping (latency still shown).
@@ -124,6 +124,7 @@ The interactive TUI pings all models in parallel every 2 seconds and shows live 
 Default ranking: **availability first**, then **higher tier first** (S+ → S → A+ …), then lower latency.
 
 Search bar provider badges:
+
 - `Name:✓` key exists and looks healthy
 - `Name:✗` provider appears expired/no-auth
 - `Name:○` key missing
@@ -207,14 +208,14 @@ Tip: press `A` from the main list to jump directly into API key editing.
 Tip: if a selected provider has no key, frouter auto-opens that provider key page
 in browser (once per provider per settings session), including when you move selection.
 
-| Key       | Action                             |
-| --------- | ---------------------------------- |
-| `↑` / `↓` / `j` / `k` | Navigate providers      |
-| `Enter`   | Edit API key inline                |
-| `Space`   | Toggle provider enabled / disabled |
-| `T`       | Fire a live test ping              |
-| `D`       | Delete key for this provider       |
-| `ESC`     | Back to main list                  |
+| Key                   | Action                             |
+| --------------------- | ---------------------------------- |
+| `↑` / `↓` / `j` / `k` | Navigate providers                 |
+| `Enter`               | Edit API key inline                |
+| `Space`               | Toggle provider enabled / disabled |
+| `T`                   | Fire a live test ping              |
+| `D`                   | Delete key for this provider       |
+| `ESC`                 | Back to main list                  |
 
 ## Flags
 

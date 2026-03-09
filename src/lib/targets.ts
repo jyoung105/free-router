@@ -57,10 +57,20 @@ function backupAndWriteJson(path, data) {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   if (existsSync(path)) {
     const ts = new Date().toISOString().replace(/[:.]/g, "-");
-    copyFileSync(path, `${path}.backup-${ts}`);
+    const backupPath = `${path}.backup-${ts}`;
+    copyFileSync(path, backupPath);
+    try {
+      chmodSync(backupPath, 0o600);
+    } catch {
+      /* best-effort */
+    }
   }
   writeFileSync(path, JSON.stringify(data, null, 2) + "\n", { mode: 0o600 });
-  chmodSync(path, 0o600);
+  try {
+    chmodSync(path, 0o600);
+  } catch {
+    /* best-effort */
+  }
 }
 
 function getProviderMeta(providerKey) {

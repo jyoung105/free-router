@@ -17,10 +17,15 @@ type PingOptions = { timeoutMs?: number };
 const STATUS_MAP: Record<string, string> = {
   "200": "up",
   "401": "noauth",
+  "403": "forbidden",
   "404": "notfound",
+  "408": "timeout",
   "429": "ratelimit", // Phase 2E: distinguish rate-limited (alive but busy)
   "000": "timeout",
+  "500": "down",
+  "502": "down",
   "503": "unavailable", // Phase 2E: service unavailable
+  "504": "down",
 };
 
 // ─── Keep-alive agents per hostname (Phase 2D) ──────────────────────────────

@@ -42,6 +42,7 @@ import {
   TIER_CYCLE,
   pad,
   visLen,
+  truncAnsiToWidth,
   R,
   B,
   D,
@@ -281,29 +282,9 @@ function fullWidthLine(content, lastLine = false) {
 
 // Truncate a string with ANSI codes to at most `maxVis` visible columns.
 // Preserves escape sequences but stops emitting visible chars once the limit is reached.
+// Emoji are treated as 2 columns wide to prevent terminal line wrapping.
 function truncAnsi(s: string, maxVis: number): string {
-  let vis = 0;
-  let out = "";
-  let i = 0;
-  while (i < s.length) {
-    if (s[i] === "\x1b") {
-      // Copy the entire escape sequence verbatim (zero visible width)
-      const start = i;
-      i++; // skip ESC
-      if (i < s.length && s[i] === "[") {
-        i++; // skip [
-        while (i < s.length && s[i] >= "\x20" && s[i] <= "\x3f") i++; // params
-        if (i < s.length) i++; // final byte
-      }
-      out += s.slice(start, i);
-    } else {
-      if (vis >= maxVis) break;
-      out += s[i];
-      vis++;
-      i++;
-    }
-  }
-  return out;
+  return truncAnsiToWidth(s, maxVis);
 }
 
 const STARTUP_PIXEL_TITLE = [
@@ -334,6 +315,8 @@ function statusDot(model) {
       return `${GREEN}*${R}`;
     case "noauth":
       return `${YELLOW}!${R}`;
+    case "forbidden":
+      return `${RED}!${R}`;
     case "ratelimit":
       return `${ORANGE}~${R}`;
     case "unavailable":
@@ -745,22 +728,36 @@ function enterTargetPickerFromSelection() {
 async function launchOpenCodeDirect() {
   prepareForInkSubApp();
 
-  const { openCodeModel, openCodePk, openCodeApiKey, notice: resolveNotice } =
-    resolveOpenCodeApplySelection(selModel);
+  const {
+    openCodeModel,
+    openCodePk,
+    openCodeApiKey,
+    notice: resolveNotice,
+  } = resolveOpenCodeApplySelection(selModel);
   if (resolveNotice) w(resolveNotice + "\n");
 
   let launch = true;
 
   try {
-    const writtenPath = writeOpenCode(openCodeModel, openCodePk, openCodeApiKey, {
-      persistApiKey: ALLOW_PLAINTEXT_KEY_EXPORT,
-    });
+    const writtenPath = writeOpenCode(
+      openCodeModel,
+      openCodePk,
+      openCodeApiKey,
+      {
+        persistApiKey: ALLOW_PLAINTEXT_KEY_EXPORT,
+      },
+    );
     w(`${GREEN} \u2713 OpenCode config written \u2192 ${writtenPath}${R}\n`);
-    const authHint = getOpenCodeAuthHint(openCodePk, openCodeApiKey, { launch });
+    const authHint = getOpenCodeAuthHint(openCodePk, openCodeApiKey, {
+      launch,
+    });
     if (authHint) w(authHint + "\n");
   } catch (err: any) {
     w(`${RED} \u2717 OpenCode write failed: ${err.message}${R}\n`);
-    setTimeout(() => { restoreAfterInkSubApp("main"); restartLoop(); }, 1400);
+    setTimeout(() => {
+      restoreAfterInkSubApp("main");
+      restartLoop();
+    }, 1400);
     return;
   }
 
@@ -768,7 +765,9 @@ async function launchOpenCodeDirect() {
   if (launch && !openCodeApiKey) {
     const meta = PROVIDERS_META[openCodePk];
     const envVar = meta?.envVar || "API key";
-    w(`\n${YELLOW} ! Missing ${meta?.name || openCodePk} API key (${envVar}).${R}\n`);
+    w(
+      `\n${YELLOW} ! Missing ${meta?.name || openCodePk} API key (${envVar}).${R}\n`,
+    );
     const addKey = await promptYesNoFromTarget(
       `${D}   Add API key now? (Y/n, default: Y): ${R}`,
       true,
@@ -777,14 +776,21 @@ async function launchOpenCodeDirect() {
       openApiKeyEditorFromMain(openCodePk);
       return;
     }
-    w(`${YELLOW} Launch cancelled. Set ${envVar} in Settings (P), then retry.${R}\n`);
+    w(
+      `${YELLOW} Launch cancelled. Set ${envVar} in Settings (P), then retry.${R}\n`,
+    );
     launch = false;
   }
 
   if (launch) {
     if (!isOpenCodeInstalled()) {
-      w(`${YELLOW} ! opencode is not installed. Install from https://github.com/opencode-ai/opencode${R}\n`);
-      setTimeout(() => { restoreAfterInkSubApp("main"); restartLoop(); }, 1400);
+      w(
+        `${YELLOW} ! opencode is not installed. Install from https://github.com/opencode-ai/opencode${R}\n`,
+      );
+      setTimeout(() => {
+        restoreAfterInkSubApp("main");
+        restartLoop();
+      }, 1400);
       return;
     }
     const launchEnv = buildOpenCodeLaunchEnv(openCodePk, openCodeApiKey);
@@ -803,7 +809,6 @@ async function launchOpenCodeDirect() {
     restartLoop();
   }, 1400);
 }
-
 
 function resolveOpenCodeApplySelection(selectedModel) {
   const pk = selectedModel.providerKey;
@@ -847,7 +852,10 @@ function buildOpenCodeLaunchEnv(providerKey, apiKey) {
   return launchEnv;
 }
 
-async function promptYesNoFromTarget(question: string, defaultValue = false): Promise<boolean> {
+async function promptYesNoFromTarget(
+  question: string,
+  defaultValue = false,
+): Promise<boolean> {
   process.stdin.removeListener("data", onData);
   try {
     return await promptYesNo(question, defaultValue);
@@ -964,7 +972,8 @@ function resolveQuickApiKeyProviderIndex() {
 function openApiKeyEditorFromMain(providerKey?: string) {
   searchMode = false;
   const pks = Object.keys(PROVIDERS_META);
-  const resolvedProviderKey = providerKey || pks[resolveQuickApiKeyProviderIndex()];
+  const resolvedProviderKey =
+    providerKey || pks[resolveQuickApiKeyProviderIndex()];
   _resetSettingsState();
   sCursor = Math.max(0, pks.indexOf(resolvedProviderKey));
   screen = "settings";
@@ -1181,7 +1190,6 @@ function handleSettings(ch) {
   renderWithAuthority("settings-ui");
 }
 
-
 // ─── Raw input dispatcher ──────────────────────────────────────────────────────
 // Buffer escape sequences: if \x1b arrives alone, wait 50ms to see if [ follows.
 let escBuf = "";
@@ -1376,9 +1384,15 @@ function restartLoop() {
 
 function prepareForInkSubApp() {
   process.stdin.removeListener("data", onData);
-  if (escTimer) { clearTimeout(escTimer); escTimer = null; }
+  if (escTimer) {
+    clearTimeout(escTimer);
+    escTimer = null;
+  }
   escBuf = "";
-  if (_renderTimer) { clearTimeout(_renderTimer); _renderTimer = null; }
+  if (_renderTimer) {
+    clearTimeout(_renderTimer);
+    _renderTimer = null;
+  }
   screen = "ink-subapp";
   stopPingLoop(pingRef);
   // Don't change raw mode — the harness manages stdin via a proxy stream.
@@ -1390,7 +1404,11 @@ function restoreAfterInkSubApp(returnScreen = "main") {
   // The harness manages stdin directly (proxy pattern), so process.stdin
   // is still in raw/flowing/data-listener mode from prepareForInkSubApp's teardown.
   // We just need to re-attach our handler and restore raw mode.
-  try { process.stdin.setRawMode(true); } catch { /* best-effort */ }
+  try {
+    process.stdin.setRawMode(true);
+  } catch {
+    /* best-effort */
+  }
   process.stdin.setEncoding("utf8");
   process.stdin.on("data", onData);
   process.stdin.resume();
@@ -1698,10 +1716,9 @@ async function checkForUpdate(): Promise<void> {
     process.stdout.write(
       `${GREEN}  \u2713 Updated to ${latest}. Restarting frouter now...${R}\n\n`,
     );
-    const restartEnv =
-      startupSearchRequestedThisLaunch
-        ? { [OPEN_SEARCH_ON_START_ENV]: "1" }
-        : {};
+    const restartEnv = startupSearchRequestedThisLaunch
+      ? { [OPEN_SEARCH_ON_START_ENV]: "1" }
+      : {};
     if (restartAfterUpdate(restartEnv)) return;
     process.stdout.write(
       `${YELLOW}  ! Update finished, but restart failed. Run frouter manually to use ${latest}.${R}\n\n`,
@@ -1794,7 +1811,10 @@ async function main() {
 
   if (!Object.keys(config.apiKeys || {}).length && process.stdin.isTTY) {
     config = await runFirstRunWizard(config);
-    if (Object.keys(config.apiKeys || {}).length && !starPromptHandledThisLaunch) {
+    if (
+      Object.keys(config.apiKeys || {}).length &&
+      !starPromptHandledThisLaunch
+    ) {
       const support = await promptGithubStarSupport();
       if (support) handleGithubStarAccepted();
       else handleGithubStarDeclined();

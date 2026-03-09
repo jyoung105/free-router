@@ -11,6 +11,7 @@ import {
   sortModels,
   visLen,
   pad,
+  truncAnsiToWidth,
   R,
   B,
   D,
@@ -204,6 +205,16 @@ test("getVerdict: Not Found for notfound status", () => {
   );
 });
 
+test("getVerdict: Forbidden for forbidden status", () => {
+  assert.equal(
+    getVerdict({
+      pings: [{ code: "403", ms: 100 }],
+      status: "forbidden",
+    }),
+    "⛔ Forbidden",
+  );
+});
+
 // ─── tierColor ───────────────────────────────────────────────────────────────
 
 test("tierColor returns bold white for S+ and S tiers", () => {
@@ -217,9 +228,12 @@ test("tierColor returns yellow for A-family tiers", () => {
   assert.equal(tierColor("A-"), YELLOW);
 });
 
-test("tierColor returns red for B and C tiers", () => {
-  assert.equal(tierColor("B+"), RED);
-  assert.equal(tierColor("B"), RED);
+test("tierColor returns orange for B+ and B tiers", () => {
+  assert.equal(tierColor("B+"), ORANGE);
+  assert.equal(tierColor("B"), ORANGE);
+});
+
+test("tierColor returns red for C tier", () => {
   assert.equal(tierColor("C"), RED);
 });
 
@@ -227,8 +241,6 @@ test("tierColor returns red for unknown/null tier", () => {
   assert.equal(tierColor(null), RED);
   assert.equal(tierColor("?"), RED);
 });
-
-// ─── latColor ────────────────────────────────────────────────────────────────
 
 test("latColor returns green for < 500ms", () => {
   assert.equal(latColor(100), GREEN);
@@ -394,6 +406,18 @@ test("sortModels reverse direction (asc=false)", () => {
   assert.equal(sorted[1].tier, "S+");
 });
 
+test("sortModels uses model ID as stable tie-breaker for equal values", () => {
+  const models = [
+    { id: "z-model", tier: "A", providerKey: "x", pings: [] },
+    { id: "a-model", tier: "A", providerKey: "x", pings: [] },
+    { id: "m-model", tier: "A", providerKey: "x", pings: [] },
+  ];
+  const sorted = sortModels(models, "tier", true);
+  assert.equal(sorted[0].id, "a-model");
+  assert.equal(sorted[1].id, "m-model");
+  assert.equal(sorted[2].id, "z-model");
+});
+
 // ─── visLen ──────────────────────────────────────────────────────────────────
 
 test("visLen returns correct length for plain ASCII text", () => {
@@ -407,14 +431,34 @@ test("visLen strips ANSI codes from length calculation", () => {
 });
 
 test("visLen counts emoji as 2 columns wide", () => {
-  const len = visLen("hi");
-  assert.ok(len >= 2, `expected emoji to be at least 2 columns, got ${len}`);
+  assert.equal(visLen("🚫"), 2);
+});
+
+test("visLen keeps provider badge checkmarks narrow", () => {
+  assert.equal(visLen("✓"), 1);
 });
 
 test("visLen handles mixed ANSI + emoji + text", () => {
-  const s = `${GREEN}ok${R} done`;
-  const len = visLen(s);
-  assert.ok(len >= 7, `expected at least 7 visible columns, got ${len}`);
+  assert.equal(visLen(`${GREEN}🚫${R} done`), 7);
+});
+
+// ─── truncAnsiToWidth ────────────────────────────────────────────────────────
+
+test("truncAnsiToWidth truncates plain ASCII correctly", () => {
+  assert.equal(truncAnsiToWidth("hello", 3), "hel");
+});
+
+test("truncAnsiToWidth counts surrogate-pair emoji as width 2", () => {
+  assert.equal(truncAnsiToWidth("🚫ab", 2), "🚫");
+  assert.equal(truncAnsiToWidth("🚫ab", 3), "🚫a");
+});
+
+test("truncAnsiToWidth preserves ANSI sequences while truncating", () => {
+  assert.equal(truncAnsiToWidth(`${GREEN}ok${R}!`, 2), `${GREEN}ok${R}`);
+});
+
+test("truncAnsiToWidth handles mixed text and emoji boundaries", () => {
+  assert.equal(truncAnsiToWidth("A🚫BC", 3), "A🚫");
 });
 
 // ─── pad ─────────────────────────────────────────────────────────────────────

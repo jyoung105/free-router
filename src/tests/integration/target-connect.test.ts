@@ -153,7 +153,6 @@ exit 0
   },
 );
 
-
 test(
   "interactive target launch asks confirmation when fallback provider key is missing and declines launch on 'n'",
   { skip: SKIP && "PTY harness uses `script`, unavailable on Windows" },

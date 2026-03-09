@@ -7,7 +7,9 @@ import { ROOT_DIR } from "../helpers/test-paths.js";
 import { cleanupTempHome, makeTempHome } from "../helpers/temp-home.js";
 import { runNode } from "../helpers/spawn-cli.js";
 
-const firstRunAppUrl = pathToFileURL(join(ROOT_DIR, "tui", "FirstRunApp.js")).href;
+const firstRunAppUrl = pathToFileURL(
+  join(ROOT_DIR, "tui", "FirstRunApp.js"),
+).href;
 const configModuleUrl = pathToFileURL(join(ROOT_DIR, "lib", "config.js")).href;
 
 const FIRST_RUN_SCRIPT = `
@@ -74,20 +76,23 @@ test("FirstRunApp star yes opens GitHub repo URL", async () => {
   const home = makeTempHome();
   const browserLogPath = join(home, "browser.log");
   try {
-    const result = await runNode(["--input-type=module", "-e", FIRST_RUN_SCRIPT], {
-      cwd: ROOT_DIR,
-      env: { HOME: home, BROWSER_LOG_PATH: browserLogPath },
-      inputChunks: [
-        { delayMs: 300, data: "\r" },
-        ...buildInputChunks([..."nvapi-demo", "\r"], 700, 120),
-        { delayMs: 2400, data: DOWN },
-        { delayMs: 2640, data: DOWN },
-        { delayMs: 2880, data: DOWN },
-        { delayMs: 3120, data: "\r" },
-        { delayMs: 3900, data: "\r" },
-      ],
-      timeoutMs: 10_000,
-    });
+    const result = await runNode(
+      ["--input-type=module", "-e", FIRST_RUN_SCRIPT],
+      {
+        cwd: ROOT_DIR,
+        env: { HOME: home, BROWSER_LOG_PATH: browserLogPath },
+        inputChunks: [
+          { delayMs: 300, data: "\r" },
+          ...buildInputChunks([..."nvapi-demo", "\r"], 700, 120),
+          { delayMs: 2400, data: DOWN },
+          { delayMs: 2640, data: DOWN },
+          { delayMs: 2880, data: DOWN },
+          { delayMs: 3120, data: "\r" },
+          { delayMs: 3900, data: "\r" },
+        ],
+        timeoutMs: 10_000,
+      },
+    );
 
     assert.equal(result.code, 0);
     const payload = extractResult(result.stdout);
@@ -107,21 +112,24 @@ test("FirstRunApp star no does not open GitHub repo URL", async () => {
   const home = makeTempHome();
   const browserLogPath = join(home, "browser.log");
   try {
-    const result = await runNode(["--input-type=module", "-e", FIRST_RUN_SCRIPT], {
-      cwd: ROOT_DIR,
-      env: { HOME: home, BROWSER_LOG_PATH: browserLogPath },
-      inputChunks: [
-        { delayMs: 300, data: "\r" },
-        ...buildInputChunks([..."nvapi-demo", "\r"], 700, 120),
-        { delayMs: 2400, data: DOWN },
-        { delayMs: 2640, data: DOWN },
-        { delayMs: 2880, data: DOWN },
-        { delayMs: 3120, data: "\r" },
-        { delayMs: 3900, data: DOWN },
-        { delayMs: 4140, data: "\r" },
-      ],
-      timeoutMs: 10_000,
-    });
+    const result = await runNode(
+      ["--input-type=module", "-e", FIRST_RUN_SCRIPT],
+      {
+        cwd: ROOT_DIR,
+        env: { HOME: home, BROWSER_LOG_PATH: browserLogPath },
+        inputChunks: [
+          { delayMs: 300, data: "\r" },
+          ...buildInputChunks([..."nvapi-demo", "\r"], 700, 120),
+          { delayMs: 2400, data: DOWN },
+          { delayMs: 2640, data: DOWN },
+          { delayMs: 2880, data: DOWN },
+          { delayMs: 3120, data: "\r" },
+          { delayMs: 3900, data: DOWN },
+          { delayMs: 4140, data: "\r" },
+        ],
+        timeoutMs: 10_000,
+      },
+    );
 
     assert.equal(result.code, 0);
     const payload = extractResult(result.stdout);
@@ -133,7 +141,10 @@ test("FirstRunApp star no does not open GitHub repo URL", async () => {
       ? readFileSync(browserLogPath, "utf8")
       : "";
     assert.match(browserLog, /https:\/\/build\.nvidia\.com\/settings\/api-key/);
-    assert.doesNotMatch(browserLog, /https:\/\/github\.com\/jyoung105\/frouter/);
+    assert.doesNotMatch(
+      browserLog,
+      /https:\/\/github\.com\/jyoung105\/frouter/,
+    );
   } finally {
     cleanupTempHome(home);
   }

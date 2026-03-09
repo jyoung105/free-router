@@ -29,17 +29,28 @@ export async function runInkSubApp<T>(
 
   // Create a proxy stdin that Ink can own without corrupting process.stdin.
   // Pipe real stdin through it; on unmount just destroy the proxy.
-  const proxyStdin = new PassThrough() as PassThrough & { isTTY: boolean; setRawMode: (mode: boolean) => void; ref: () => void; unref: () => void };
+  const proxyStdin = new PassThrough() as PassThrough & {
+    isTTY: boolean;
+    setRawMode: (mode: boolean) => void;
+    ref: () => void;
+    unref: () => void;
+  };
   proxyStdin.isTTY = true;
-  proxyStdin.setRawMode = () => {};  // no-op; we manage raw mode ourselves
-  proxyStdin.ref = () => {};          // no-op; PassThrough doesn't have ref/unref
+  proxyStdin.setRawMode = () => {}; // no-op; we manage raw mode ourselves
+  proxyStdin.ref = () => {}; // no-op; PassThrough doesn't have ref/unref
   proxyStdin.unref = () => {};
 
   // Forward real stdin data to the proxy
-  const forwarder = (chunk: Buffer) => { proxyStdin.write(chunk); };
+  const forwarder = (chunk: Buffer) => {
+    proxyStdin.write(chunk);
+  };
   process.stdin.on("data", forwarder);
   process.stdin.setEncoding("utf8");
-  try { process.stdin.setRawMode(true); } catch { /* best-effort */ }
+  try {
+    process.stdin.setRawMode(true);
+  } catch {
+    /* best-effort */
+  }
   process.stdin.resume();
 
   return new Promise<T>((outerResolve) => {

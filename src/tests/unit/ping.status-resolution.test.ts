@@ -121,3 +121,66 @@ test("pingAllOnce converts pending models to down on connection errors", async (
     PROVIDERS_META.nvidia.chatUrl = originalChatUrl;
   }
 });
+
+test("pingAllOnce maps HTTP 403 to forbidden status", async () => {
+  const server = await createHttpServer((req, res) => {
+    req.resume();
+    res.writeHead(403, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Forbidden" }));
+  });
+
+  const originalChatUrl = PROVIDERS_META.nvidia.chatUrl;
+  PROVIDERS_META.nvidia.chatUrl = `${server.baseUrl}/chat/completions`;
+
+  try {
+    const models = makePendingModels(1);
+    await pingAllOnce(models, testConfig);
+    assert.equal(models[0].status, "forbidden");
+    assert.equal(models[0].httpCode, "403");
+  } finally {
+    PROVIDERS_META.nvidia.chatUrl = originalChatUrl;
+    await server.close();
+  }
+});
+
+test("pingAllOnce maps HTTP 500 to down status", async () => {
+  const server = await createHttpServer((req, res) => {
+    req.resume();
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Internal Server Error" }));
+  });
+
+  const originalChatUrl = PROVIDERS_META.nvidia.chatUrl;
+  PROVIDERS_META.nvidia.chatUrl = `${server.baseUrl}/chat/completions`;
+
+  try {
+    const models = makePendingModels(1);
+    await pingAllOnce(models, testConfig);
+    assert.equal(models[0].status, "down");
+    assert.equal(models[0].httpCode, "500");
+  } finally {
+    PROVIDERS_META.nvidia.chatUrl = originalChatUrl;
+    await server.close();
+  }
+});
+
+test("pingAllOnce maps HTTP 502 to down status", async () => {
+  const server = await createHttpServer((req, res) => {
+    req.resume();
+    res.writeHead(502, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Bad Gateway" }));
+  });
+
+  const originalChatUrl = PROVIDERS_META.nvidia.chatUrl;
+  PROVIDERS_META.nvidia.chatUrl = `${server.baseUrl}/chat/completions`;
+
+  try {
+    const models = makePendingModels(1);
+    await pingAllOnce(models, testConfig);
+    assert.equal(models[0].status, "down");
+    assert.equal(models[0].httpCode, "502");
+  } finally {
+    PROVIDERS_META.nvidia.chatUrl = originalChatUrl;
+    await server.close();
+  }
+});

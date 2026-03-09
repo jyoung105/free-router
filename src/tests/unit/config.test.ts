@@ -1,6 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, statSync, writeFileSync, readdirSync } from "node:fs";
+import {
+  chmodSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+  readdirSync,
+} from "node:fs";
 import { join } from "node:path";
 import { importFresh } from "../helpers/import-fresh.js";
 import { ROOT_DIR } from "../helpers/test-paths.js";
@@ -51,6 +57,24 @@ test("saveConfig writes ~/.frouter.json with 0600 permissions", async () => {
   });
 });
 
+test("saveConfig rewrites existing loose-permission config to 0600", async () => {
+  await withTempConfigModule(async ({ saveConfig, CONFIG_PATH }) => {
+    saveConfig({
+      apiKeys: { nvidia: "nvapi-demo" },
+      providers: { nvidia: { enabled: true }, openrouter: { enabled: true } },
+    });
+    chmodSync(CONFIG_PATH, 0o644);
+
+    saveConfig({
+      apiKeys: { nvidia: "nvapi-demo-2" },
+      providers: { nvidia: { enabled: true }, openrouter: { enabled: false } },
+    });
+
+    const mode = statSync(CONFIG_PATH).mode & 0o777;
+    assert.equal(mode, 0o600);
+  });
+});
+
 test("getApiKey prefers env var over config file", async () => {
   await withTempConfigModule(async ({ getApiKey }) => {
     process.env.NVIDIA_API_KEY = "env-wins";
@@ -80,6 +104,7 @@ test("loadConfig preserves malformed config via a timestamped backup", async () 
     );
     assert.equal(backups.length, 1);
     assert.equal(readFileSync(join(home, backups[0]), "utf8"), "{ broken json");
+    assert.equal(statSync(join(home, backups[0])).mode & 0o777, 0o600);
   });
 });
 

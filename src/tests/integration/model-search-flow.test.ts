@@ -188,7 +188,11 @@ test(
 
       const result = await runInPty(process.execPath, [BIN_PATH], {
         cwd: ROOT_DIR,
-        env: { HOME: home, FROUTER_NO_FETCH: "1", FROUTER_SKIP_UPDATE_ONCE: "1" },
+        env: {
+          HOME: home,
+          FROUTER_NO_FETCH: "1",
+          FROUTER_SKIP_UPDATE_ONCE: "1",
+        },
         inputChunks,
         timeoutMs: 12_000,
       });
@@ -282,7 +286,11 @@ test(
 
       const result = await runInPty(process.execPath, [BIN_PATH], {
         cwd: ROOT_DIR,
-        env: { HOME: home, FROUTER_NO_FETCH: "1", FROUTER_SKIP_UPDATE_ONCE: "1" },
+        env: {
+          HOME: home,
+          FROUTER_NO_FETCH: "1",
+          FROUTER_SKIP_UPDATE_ONCE: "1",
+        },
         inputChunks: [{ delayMs: 900, data: "q" }],
         timeoutMs: 12_000,
       });
@@ -584,7 +592,11 @@ test(
         env: { HOME: home, FROUTER_NO_FETCH: "1" },
         inputChunks: [
           { delayMs: 850, data: "a" },
-          ...buildInputChunks([..."nvapi-added-main-tab", "\r", "q", "q"], 1500, 120),
+          ...buildInputChunks(
+            [..."nvapi-added-main-tab", "\r", "q", "q"],
+            1500,
+            120,
+          ),
         ],
         timeoutMs: 12_000,
       });
@@ -629,7 +641,11 @@ test(
         env,
         inputChunks: [
           { delayMs: 850, data: "a" },
-          ...buildInputChunks([..."nvapi-added-from-auto-open", "\r", "q", "q"], 1500, 120),
+          ...buildInputChunks(
+            [..."nvapi-added-from-auto-open", "\r", "q", "q"],
+            1500,
+            120,
+          ),
         ],
         timeoutMs: 12_000,
       });
@@ -642,7 +658,10 @@ test(
 
       if (fakeBrowser) {
         const browserLog = readFileSync(fakeBrowser.logPath, "utf8");
-        assert.match(browserLog, /https:\/\/build\.nvidia\.com\/settings\/api-keys/);
+        assert.match(
+          browserLog,
+          /https:\/\/build\.nvidia\.com\/settings\/api-keys/,
+        );
       }
     } finally {
       cleanupTempHome(home);
@@ -689,7 +708,10 @@ test(
 
       if (fakeBrowser) {
         const browserLog = readFileSync(fakeBrowser.logPath, "utf8");
-        assert.match(browserLog, /https:\/\/build\.nvidia\.com\/settings\/api-keys/);
+        assert.match(
+          browserLog,
+          /https:\/\/build\.nvidia\.com\/settings\/api-keys/,
+        );
       }
     } finally {
       cleanupTempHome(home);
@@ -767,7 +789,11 @@ test(
         env: { HOME: home, FROUTER_NO_FETCH: "1" },
         inputChunks: [
           { delayMs: 850, data: "A" },
-          ...buildInputChunks([..."nvapi-new-main-tab", "\r", "q", "q"], 1500, 120),
+          ...buildInputChunks(
+            [..."nvapi-new-main-tab", "\r", "q", "q"],
+            1500,
+            120,
+          ),
         ],
         timeoutMs: 12_000,
       });
@@ -804,10 +830,18 @@ test(
 
       const result = await runInPty(process.execPath, [BIN_PATH], {
         cwd: ROOT_DIR,
-        env: { HOME: home, FROUTER_NO_FETCH: "1", FROUTER_SKIP_UPDATE_ONCE: "1" },
+        env: {
+          HOME: home,
+          FROUTER_NO_FETCH: "1",
+          FROUTER_SKIP_UPDATE_ONCE: "1",
+        },
         inputChunks: [
           { delayMs: 2000, data: "a" },
-          ...buildInputChunks([..."bad-prefix", "\r", "\x1b", "q", "q"], 3500, 120),
+          ...buildInputChunks(
+            [..."bad-prefix", "\r", "\x1b", "q", "q"],
+            3500,
+            120,
+          ),
         ],
         timeoutMs: 12_000,
       });
