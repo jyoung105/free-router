@@ -7,11 +7,11 @@ import {
   saveConfig,
   getApiKey,
   promptMasked,
+  runFirstRunWizard,
   PROVIDERS_META,
   validateProviderApiKey,
   openBrowser,
 } from "../lib/config.js";
-import type { FirstRunResult } from "../tui/FirstRunApp.js";
 import { getAllModels } from "../lib/models.js";
 import {
   ping,
@@ -146,6 +146,7 @@ let sEditing = false;
 let sKeyBuf = "";
 let sTestRes = {};
 let sNotice = "";
+let sAutoOpenedPk = "";
 let pingRef = null;
 let userNavigated = false; // true once user actively moves cursor
 let autoSortPauseUntil = 0;
@@ -599,6 +600,7 @@ const ALLOWED_RENDER_REASONS = new Set([
   "main-input",
   "main-search",
   "main-sort",
+  "settings-open",
   "settings-ui",
   "settings-test",
   "settings-exit",
@@ -728,6 +730,7 @@ function _resetSettingsState() {
   sKeyBuf = "";
   sNotice = "";
   sTestRes = {};
+  sAutoOpenedPk = "";
 }
 
 function enterTargetPickerFromSelection() {
@@ -960,48 +963,31 @@ function resolveQuickApiKeyProviderIndex() {
 
 function openApiKeyEditorFromMain(providerKey?: string) {
   searchMode = false;
-  screen = "ink-subapp";
   const pks = Object.keys(PROVIDERS_META);
   const resolvedProviderKey = providerKey || pks[resolveQuickApiKeyProviderIndex()];
-  void openSettingsInk("editKey", resolvedProviderKey);
+  _resetSettingsState();
+  sCursor = Math.max(0, pks.indexOf(resolvedProviderKey));
+  screen = "settings";
+  sEditing = true;
+
+  const meta = PROVIDERS_META[resolvedProviderKey];
+  if (meta?.signupUrl && !getApiKey(config, resolvedProviderKey)) {
+    openBrowser(meta.signupUrl);
+    sNotice = `${D}Opened ${meta.name} key page in browser${R}`;
+  }
+
+  renderWithAuthority("settings-open");
 }
 
-async function openSettingsInk(initialMode: "navigate" | "editKey" = "navigate", providerKey?: string) {
-  // Detach main input handler immediately — before dynamic imports — so that
-  // dispatch() cannot silently drop keystrokes destined for the Ink subapp.
-  // Without this, input that arrives during the import gap is consumed by
-  // dispatch (screen is already "ink-subapp") and never reaches Ink.
-  process.stdin.removeListener("data", onData);
+function maybeAutoOpenSettingsSignup(providerKey: string) {
+  if (!providerKey || sAutoOpenedPk === providerKey) return;
 
-  const React = await import("react");
-  const { SettingsApp } = await import("../tui/SettingsApp.js");
-  const { runInkSubApp } = await import("../tui/ink-harness.js");
+  const meta = PROVIDERS_META[providerKey];
+  if (!meta?.signupUrl || getApiKey(config, providerKey)) return;
 
-  const result = await runInkSubApp<{ config: any }>(
-    (resolve) =>
-      React.createElement(SettingsApp, {
-        config,
-        providers: PROVIDERS_META,
-        getApiKey,
-        validateKey: validateProviderApiKey,
-        saveConfig,
-        ping,
-        openBrowser,
-        initialMode,
-        initialProvider: providerKey,
-        onDone: resolve,
-      }),
-    {
-      beforeMount: () => prepareForInkSubApp(),
-      afterUnmount: () => restoreAfterInkSubApp("main"),
-    },
-  );
-
-  config = result.config;
-  void refreshModels().then(() => {
-    restartLoop();
-    renderWithAuthority("refresh-complete");
-  });
+  openBrowser(meta.signupUrl);
+  sAutoOpenedPk = providerKey;
+  sNotice = `${D}Opened ${meta.name} key page in browser${R}`;
 }
 
 function handleMain(ch) {
@@ -1057,8 +1043,10 @@ function handleMain(ch) {
     enterTargetPickerFromSelection();
   } else if (ch === "p" || ch === "P") {
     searchMode = false;
-    screen = "ink-subapp";
-    void openSettingsInk("navigate");
+    _resetSettingsState();
+    screen = "settings";
+    maybeAutoOpenSettingsSignup(Object.keys(PROVIDERS_META)[sCursor] || "");
+    renderWithAuthority("settings-open");
     return;
   } else if (ch === "a" || ch === "A") {
     openApiKeyEditorFromMain();
@@ -1153,10 +1141,12 @@ function handleSettings(ch) {
       renderWithAuthority("refresh-complete");
     });
     return;
-  } else if (ch === UP) {
+  } else if (ch === UP || ch === "k" || ch === "K") {
     sCursor = Math.max(0, sCursor - 1);
-  } else if (ch === DOWN) {
+    maybeAutoOpenSettingsSignup(pks[sCursor]);
+  } else if (ch === DOWN || ch === "j" || ch === "J") {
     sCursor = Math.min(pks.length - 1, sCursor + 1);
+    maybeAutoOpenSettingsSignup(pks[sCursor]);
   } else if (ch === " ") {
     config.providers ??= {};
     config.providers[currentPk] ??= {};
@@ -1803,28 +1793,12 @@ async function main() {
   userScrollSortPauseMs = resolveUserScrollSortPauseMs(config);
 
   if (!Object.keys(config.apiKeys || {}).length && process.stdin.isTTY) {
-    const React = await import("react");
-    const { render: inkRender } = await import("ink");
-    const { FirstRunApp } = await import("../tui/FirstRunApp.js");
-
-    const firstRun = await new Promise<FirstRunResult>((done) => {
-      const instance = inkRender(
-        React.createElement(FirstRunApp, {
-          providers: PROVIDERS_META,
-          validateKey: validateProviderApiKey,
-          openBrowser,
-          onDone: (result: FirstRunResult) => {
-            instance.unmount();
-            done(result);
-          },
-        }),
-      );
-    });
-
-    Object.assign(config.apiKeys ??= {}, firstRun.apiKeys);
-    saveConfig(config);
-    starPromptHandledThisLaunch = firstRun.starPromptHandled;
-    startupSearchRequestedThisLaunch = firstRun.startupSearchRequested;
+    config = await runFirstRunWizard(config);
+    if (Object.keys(config.apiKeys || {}).length && !starPromptHandledThisLaunch) {
+      const support = await promptGithubStarSupport();
+      if (support) handleGithubStarAccepted();
+      else handleGithubStarDeclined();
+    }
   }
 
   await checkForUpdate();
