@@ -122,42 +122,12 @@
       "aa_url": ""
     },
     {
-      "source": "openrouter",
-      "model_id": "qwen/qwen3-235b-a22b-thinking-2507",
-      "name": "Qwen3 235B Thinking",
-      "swe_bench": null,
-      "tier": "S+",
-      "context": "131k",
-      "aa_slug": "",
-      "aa_intelligence": null,
-      "aa_speed_tps": null,
-      "aa_price_input": null,
-      "aa_price_output": null,
-      "aa_context": "",
-      "aa_url": ""
-    },
-    {
       "source": "nim",
       "model_id": "qwen/qwen3-coder-480b-a35b-instruct",
       "name": "Qwen3 Coder 480B",
       "swe_bench": "70.6%",
       "tier": "S+",
       "context": "256k",
-      "aa_slug": "",
-      "aa_intelligence": null,
-      "aa_speed_tps": null,
-      "aa_price_input": null,
-      "aa_price_output": null,
-      "aa_context": "",
-      "aa_url": ""
-    },
-    {
-      "source": "openrouter",
-      "model_id": "qwen/qwen3-vl-235b-a22b-thinking",
-      "name": "Qwen3 VL 235B Thinking",
-      "swe_bench": null,
-      "tier": "S+",
-      "context": "131k",
       "aa_slug": "",
       "aa_intelligence": null,
       "aa_speed_tps": null,
@@ -389,7 +359,8 @@
       "aa_price_input": null,
       "aa_price_output": null,
       "aa_context": "",
-      "aa_url": ""
+      "aa_url": "",
+      "opencode_supported": false
     },
     {
       "source": "nim",
@@ -473,21 +444,6 @@
       "swe_bench": null,
       "tier": "A",
       "context": "16k",
-      "aa_slug": "",
-      "aa_intelligence": null,
-      "aa_speed_tps": null,
-      "aa_price_input": null,
-      "aa_price_output": null,
-      "aa_context": "",
-      "aa_url": ""
-    },
-    {
-      "source": "openrouter",
-      "model_id": "nousresearch/hermes-3-llama-3.1-405b:free",
-      "name": "Hermes 3 405B",
-      "swe_bench": null,
-      "tier": "A",
-      "context": "131k",
       "aa_slug": "",
       "aa_intelligence": null,
       "aa_speed_tps": null,
@@ -644,22 +600,8 @@
       "aa_price_input": null,
       "aa_price_output": null,
       "aa_context": "",
-      "aa_url": ""
-    },
-    {
-      "source": "openrouter",
-      "model_id": "qwen/qwen3-vl-30b-a3b-thinking",
-      "name": "Qwen3 VL 30B Thinking",
-      "swe_bench": null,
-      "tier": "A",
-      "context": "131k",
-      "aa_slug": "",
-      "aa_intelligence": null,
-      "aa_speed_tps": null,
-      "aa_price_input": null,
-      "aa_price_output": null,
-      "aa_context": "",
-      "aa_url": ""
+      "aa_url": "",
+      "opencode_supported": false
     },
     {
       "source": "nim",
@@ -704,7 +646,8 @@
       "aa_price_input": null,
       "aa_price_output": null,
       "aa_context": "",
-      "aa_url": ""
+      "aa_url": "",
+      "opencode_supported": false
     },
     {
       "source": "nim",
@@ -824,7 +767,8 @@
       "aa_price_input": 0.15,
       "aa_price_output": 0.6,
       "aa_context": "131k",
-      "aa_url": "https://artificialanalysis.ai/models/gpt-oss-120b"
+      "aa_url": "https://artificialanalysis.ai/models/gpt-oss-120b",
+      "opencode_supported": false
     },
     {
       "source": "nim",
@@ -989,7 +933,8 @@
       "aa_price_input": null,
       "aa_price_output": null,
       "aa_context": "",
-      "aa_url": ""
+      "aa_url": "",
+      "opencode_supported": false
     },
     {
       "source": "nim",
@@ -1038,21 +983,6 @@
     },
     {
       "source": "openrouter",
-      "model_id": "upstage/solar-pro-3:free",
-      "name": "Solar Pro 3",
-      "swe_bench": null,
-      "tier": "B+",
-      "context": "128k",
-      "aa_slug": "",
-      "aa_intelligence": null,
-      "aa_speed_tps": null,
-      "aa_price_input": null,
-      "aa_price_output": null,
-      "aa_context": "",
-      "aa_url": ""
-    },
-    {
-      "source": "openrouter",
       "model_id": "stepfun/step-3.5-flash:free",
       "name": "Step 3.5 Flash",
       "swe_bench": null,
@@ -1064,7 +994,8 @@
       "aa_price_input": null,
       "aa_price_output": null,
       "aa_context": "",
-      "aa_url": ""
+      "aa_url": "",
+      "opencode_supported": false
     },
     {
       "source": "nim",
@@ -1169,7 +1100,8 @@
       "aa_price_input": 0.07,
       "aa_price_output": 0.2,
       "aa_context": "131k",
-      "aa_url": "https://artificialanalysis.ai/models/gpt-oss-20b"
+      "aa_url": "https://artificialanalysis.ai/models/gpt-oss-20b",
+      "opencode_supported": false
     },
     {
       "source": "openrouter",
@@ -1184,7 +1116,8 @@
       "aa_price_input": 0.2,
       "aa_price_output": 1.1,
       "aa_context": "128k",
-      "aa_url": "https://artificialanalysis.ai/models/glm-4-5-air"
+      "aa_url": "https://artificialanalysis.ai/models/glm-4-5-air",
+      "opencode_supported": false
     },
     {
       "source": "nim",
@@ -1202,39 +1135,9 @@
       "aa_url": ""
     },
     {
-      "source": "openrouter",
-      "model_id": "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
-      "name": "Dolphin Mistral 24B",
-      "swe_bench": null,
-      "tier": "B",
-      "context": "32k",
-      "aa_slug": "",
-      "aa_intelligence": null,
-      "aa_speed_tps": null,
-      "aa_price_input": null,
-      "aa_price_output": null,
-      "aa_context": "",
-      "aa_url": ""
-    },
-    {
       "source": "nim",
       "model_id": "google/gemma-2-27b-it",
       "name": "Gemma 2 27B",
-      "swe_bench": null,
-      "tier": "B",
-      "context": "8k",
-      "aa_slug": "",
-      "aa_intelligence": null,
-      "aa_speed_tps": null,
-      "aa_price_input": null,
-      "aa_price_output": null,
-      "aa_context": "",
-      "aa_url": ""
-    },
-    {
-      "source": "openrouter",
-      "model_id": "google/gemma-3n-e4b-it:free",
-      "name": "Gemma 3n 4B",
       "swe_bench": null,
       "tier": "B",
       "context": "8k",
@@ -1349,7 +1252,8 @@
       "aa_price_input": null,
       "aa_price_output": null,
       "aa_context": "",
-      "aa_url": ""
+      "aa_url": "",
+      "opencode_supported": false
     },
     {
       "source": "nim",
@@ -1379,7 +1283,8 @@
       "aa_price_input": null,
       "aa_price_output": null,
       "aa_context": "",
-      "aa_url": ""
+      "aa_url": "",
+      "opencode_supported": false
     },
     {
       "source": "nim",
@@ -1514,7 +1419,8 @@
       "aa_price_input": null,
       "aa_price_output": null,
       "aa_context": "",
-      "aa_url": ""
+      "aa_url": "",
+      "opencode_supported": false
     },
     {
       "source": "nim",
@@ -1559,7 +1465,8 @@
       "aa_price_input": null,
       "aa_price_output": null,
       "aa_context": "",
-      "aa_url": ""
+      "aa_url": "",
+      "opencode_supported": false
     },
     {
       "source": "openrouter",
@@ -1574,7 +1481,8 @@
       "aa_price_input": 0.1,
       "aa_price_output": 0.3,
       "aa_context": "128k",
-      "aa_url": "https://artificialanalysis.ai/models/mistral-small-3-1"
+      "aa_url": "https://artificialanalysis.ai/models/mistral-small-3-1",
+      "opencode_supported": false
     },
     {
       "source": "nim",
@@ -1619,7 +1527,8 @@
       "aa_price_input": 0,
       "aa_price_output": 0,
       "aa_context": "128k",
-      "aa_url": "https://artificialanalysis.ai/models/gemma-3-27b"
+      "aa_url": "https://artificialanalysis.ai/models/gemma-3-27b",
+      "opencode_supported": false
     },
     {
       "source": "nim",
@@ -1635,21 +1544,6 @@
       "aa_price_output": 0.52,
       "aa_context": "4k",
       "aa_url": "https://artificialanalysis.ai/models/phi-3-mini"
-    },
-    {
-      "source": "openrouter",
-      "model_id": "google/gemma-3-12b-it:free",
-      "name": "Gemma 3 12B",
-      "swe_bench": null,
-      "tier": "C",
-      "context": "128k",
-      "aa_slug": "gemma-3-12b",
-      "aa_intelligence": 9,
-      "aa_speed_tps": 36.2,
-      "aa_price_input": 0,
-      "aa_price_output": 0,
-      "aa_context": "128k",
-      "aa_url": "https://artificialanalysis.ai/models/gemma-3-12b"
     },
     {
       "source": "nim",
@@ -1680,21 +1574,6 @@
       "aa_price_output": null,
       "aa_context": "",
       "aa_url": ""
-    },
-    {
-      "source": "openrouter",
-      "model_id": "google/gemma-3-4b-it:free",
-      "name": "Gemma 3 4B",
-      "swe_bench": null,
-      "tier": "C",
-      "context": "128k",
-      "aa_slug": "gemma-3-4b",
-      "aa_intelligence": 6,
-      "aa_speed_tps": 34.9,
-      "aa_price_input": 0,
-      "aa_price_output": 0,
-      "aa_context": "128k",
-      "aa_url": "https://artificialanalysis.ai/models/gemma-3-4b"
     },
     {
       "source": "nim",
@@ -1892,21 +1771,6 @@
       "aa_url": ""
     },
     {
-      "source": "openrouter",
-      "model_id": "google/gemma-3n-e2b-it:free",
-      "name": "Gemma 3n 2B",
-      "swe_bench": null,
-      "tier": "C",
-      "context": "8k",
-      "aa_slug": "",
-      "aa_intelligence": null,
-      "aa_speed_tps": null,
-      "aa_price_input": null,
-      "aa_price_output": null,
-      "aa_context": "",
-      "aa_url": ""
-    },
-    {
       "source": "nim",
       "model_id": "google/gemma-3n-e2b-it",
       "name": "Gemma 3n 2B",
@@ -2012,36 +1876,6 @@
       "aa_url": ""
     },
     {
-      "source": "openrouter",
-      "model_id": "liquid/lfm-2.5-1.2b-instruct:free",
-      "name": "LFM2.5 1.2B Instruct",
-      "swe_bench": null,
-      "tier": "C",
-      "context": "33k",
-      "aa_slug": "",
-      "aa_intelligence": null,
-      "aa_speed_tps": null,
-      "aa_price_input": null,
-      "aa_price_output": null,
-      "aa_context": "",
-      "aa_url": ""
-    },
-    {
-      "source": "openrouter",
-      "model_id": "liquid/lfm-2.5-1.2b-thinking:free",
-      "name": "LFM2.5 1.2B Thinking",
-      "swe_bench": null,
-      "tier": "C",
-      "context": "33k",
-      "aa_slug": "",
-      "aa_intelligence": null,
-      "aa_speed_tps": null,
-      "aa_price_input": null,
-      "aa_price_output": null,
-      "aa_context": "",
-      "aa_url": ""
-    },
-    {
       "source": "nim",
       "model_id": "meta/llama3-8b-instruct",
       "name": "Llama 3 8B",
@@ -2063,21 +1897,6 @@
       "swe_bench": null,
       "tier": "C",
       "context": "128k",
-      "aa_slug": "",
-      "aa_intelligence": null,
-      "aa_speed_tps": null,
-      "aa_price_input": null,
-      "aa_price_output": null,
-      "aa_context": "",
-      "aa_url": ""
-    },
-    {
-      "source": "openrouter",
-      "model_id": "meta-llama/llama-3.2-3b-instruct:free",
-      "name": "Llama 3.2 3B",
-      "swe_bench": null,
-      "tier": "C",
-      "context": "131k",
       "aa_slug": "",
       "aa_intelligence": null,
       "aa_speed_tps": null,
@@ -2489,7 +2308,8 @@
       "aa_price_input": null,
       "aa_price_output": null,
       "aa_context": "",
-      "aa_url": ""
+      "aa_url": "",
+      "opencode_supported": false
     },
     {
       "source": "nim",
@@ -2519,6 +2339,150 @@
       "aa_price_input": null,
       "aa_price_output": null,
       "aa_context": "",
+      "aa_url": ""
+    },
+    {
+      "source": "nim",
+      "model_id": "google/gemma-3-12b-it",
+      "name": "Gemma 3 12B",
+      "swe_bench": null,
+      "tier": "B",
+      "context": "33k",
+      "opencode_supported": null,
+      "aa_slug": "gemma-3-12b",
+      "aa_intelligence": null,
+      "aa_speed_tps": null,
+      "aa_price_input": null,
+      "aa_price_output": null,
+      "aa_context": "33k",
+      "aa_url": "https://artificialanalysis.ai/models/gemma-3-12b"
+    },
+    {
+      "source": "nim",
+      "model_id": "google/gemma-3-4b-it",
+      "name": "Gemma 3 4B",
+      "swe_bench": null,
+      "tier": "C",
+      "context": "33k",
+      "opencode_supported": null,
+      "aa_slug": "gemma-3-4b",
+      "aa_intelligence": null,
+      "aa_speed_tps": null,
+      "aa_price_input": null,
+      "aa_price_output": null,
+      "aa_context": "33k",
+      "aa_url": "https://artificialanalysis.ai/models/gemma-3-4b"
+    },
+    {
+      "source": "nim",
+      "model_id": "minimaxai/minimax-m2.5",
+      "name": "MiniMax M2.5",
+      "swe_bench": null,
+      "tier": "S+",
+      "context": "205k",
+      "opencode_supported": null,
+      "aa_slug": "minimax-m2-5",
+      "aa_intelligence": 42,
+      "aa_speed_tps": 49.1,
+      "aa_price_input": 0.3,
+      "aa_price_output": 1.2,
+      "aa_context": "205k",
+      "aa_url": "https://artificialanalysis.ai/models/minimax-m2-5"
+    },
+    {
+      "source": "nim",
+      "model_id": "nvidia/gliner-pii",
+      "name": "GLiNER PII",
+      "swe_bench": null,
+      "tier": "C",
+      "context": "33k",
+      "opencode_supported": null,
+      "aa_slug": "",
+      "aa_intelligence": null,
+      "aa_speed_tps": null,
+      "aa_price_input": null,
+      "aa_price_output": null,
+      "aa_context": "",
+      "aa_url": ""
+    },
+    {
+      "source": "nim",
+      "model_id": "nvidia/nemotron-3-super-120b-a12b",
+      "name": "Nemotron 3 Super 120B",
+      "swe_bench": "60.5%",
+      "tier": "S",
+      "context": "262k",
+      "opencode_supported": null,
+      "aa_slug": "nvidia-nemotron-3-super-120b-a12b",
+      "aa_intelligence": null,
+      "aa_speed_tps": 449.5,
+      "aa_price_input": null,
+      "aa_price_output": null,
+      "aa_context": "262k",
+      "aa_url": "https://artificialanalysis.ai/models/nvidia-nemotron-3-super-120b-a12b"
+    },
+    {
+      "source": "nim",
+      "model_id": "qwen/qwen3.5-122b-a10b",
+      "name": "Qwen3.5 122B",
+      "swe_bench": null,
+      "tier": "S+",
+      "context": "131k",
+      "opencode_supported": null,
+      "aa_slug": "qwen3-5-122b",
+      "aa_intelligence": null,
+      "aa_speed_tps": null,
+      "aa_price_input": null,
+      "aa_price_output": null,
+      "aa_context": "131k",
+      "aa_url": "https://artificialanalysis.ai/models/qwen3-5-122b"
+    },
+    {
+      "source": "openrouter",
+      "model_id": "nvidia/nemotron-3-super-120b-a12b:free",
+      "name": "NVIDIA: Nemotron 3 Super (free)",
+      "swe_bench": "60.5%",
+      "tier": "S",
+      "context": "262k",
+      "opencode_supported": false,
+      "aa_slug": "nvidia-nemotron-3-super-120b-a12b",
+      "aa_intelligence": null,
+      "aa_speed_tps": 449.5,
+      "aa_price_input": null,
+      "aa_price_output": null,
+      "aa_context": "262k",
+      "aa_url": "https://artificialanalysis.ai/models/nvidia-nemotron-3-super-120b-a12b"
+    },
+    {
+      "source": "openrouter",
+      "model_id": "openrouter/healer-alpha",
+      "name": "Healer Alpha",
+      "swe_bench": null,
+      "tier": "A+",
+      "context": "262k",
+      "opencode_supported": false,
+      "aa_slug": "",
+      "aa_intelligence": null,
+      "aa_speed_tps": 93,
+      "aa_price_input": null,
+      "aa_price_output": null,
+      "aa_context": "262k",
+      "aa_url": ""
+    },
+    {
+      "source": "openrouter",
+      "model_id": "openrouter/hunter-alpha",
+      "name": "Hunter Alpha",
+      "swe_bench": null,
+      "tier": "A+",
+      "context": "1.0m",
+      "opencode_supported": false,
+      "aa_slug": "",
+      "aa_intelligence": null,
+      "aa_speed_tps": 48,
+      "aa_price_input": null,
+      "aa_price_output": null,
+      "aa_context": "1.0m",
       "aa_url": ""
     }
   ]

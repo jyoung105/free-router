@@ -1,8 +1,31 @@
 {
-  "source": "https://models.dev/api.json",
-  "updated_at": "",
+  "source": "https://github.com/opencode-ai/opencode/blob/main/internal/llm/models/",
+  "updated_at": "2026-03-13T05:40:36.767Z",
+  "note": "OpenCode has NO built-in nvidia/NIM provider. OpenRouter has ~20 hardcoded models.",
   "providers": {
     "nvidia": [],
-    "openrouter": []
+    "openrouter": [
+      "anthropic/claude-3-haiku",
+      "anthropic/claude-3-opus",
+      "anthropic/claude-3.5-haiku",
+      "anthropic/claude-3.5-sonnet",
+      "anthropic/claude-3.7-sonnet",
+      "deepseek/deepseek-r1-0528",
+      "deepseek/deepseek-r1-0528:free",
+      "google/gemini-2.5-flash-preview:thinking",
+      "google/gemini-2.5-pro-preview-03-25",
+      "openai/gpt-4.1",
+      "openai/gpt-4.1-mini",
+      "openai/gpt-4.1-nano",
+      "openai/gpt-4.5-preview",
+      "openai/gpt-4o",
+      "openai/gpt-4o-mini",
+      "openai/o1",
+      "openai/o1-mini",
+      "openai/o1-pro",
+      "openai/o3",
+      "openai/o3-mini-high",
+      "openai/o4-mini-high"
+    ]
   }
 }
