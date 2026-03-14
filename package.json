@@ -1,6 +1,6 @@
 {
   "name": "frouter-cli",
-  "version": "1.1.13",
+  "version": "1.1.14",
   "description": "Free model router — discover, ping, and configure free AI models for OpenCode / OpenClaw",
   "bin": {
     "frouter": "dist/bin/frouter.js"
@@ -55,14 +55,14 @@
   "license": "MIT",
   "dependencies": {
     "@inkjs/ui": "^2.0.0",
-    "ink": "^5.1.0",
-    "react": "^18.3.1"
+    "ink": "^6.8.0",
+    "react": "^19.2.4"
   },
   "devDependencies": {
-    "@types/react": "^18.3.0",
+    "@types/react": "^19.2.14",
     "@eslint/js": "^9.39.3",
     "@types/node": "^25.3.0",
-    "eslint": "^9.39.3",
+    "eslint": "^10.0.3",
     "globals": "^17.3.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1"

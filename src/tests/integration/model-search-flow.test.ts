@@ -207,7 +207,7 @@ test(
         (line) => line.includes("#") && line.includes("Model"),
       );
       assert.notEqual(headerIdx, -1);
-      assert.match(frame, /█████/);
+      assert.match(frame, /███████╗/);
       const firstRankLine = lines
         .slice(headerIdx + 1)
         .find((line) => /^\s+\d+\s+/.test(line));
@@ -253,7 +253,7 @@ test(
       const frameRaw = getLatestFrameRaw(result.stdout, "/_");
       assert.ok(frameRaw, "expected a rendered search frame after scroll");
       const frame = stripAnsi(frameRaw);
-      assert.doesNotMatch(frame, /█████/);
+      assert.doesNotMatch(frame, /███████╗/);
 
       const selectedRaw = frameRaw
         .split("\n")
