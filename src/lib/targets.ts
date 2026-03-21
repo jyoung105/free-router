@@ -94,14 +94,19 @@ function resolvePersistedApiKey(
   return checked.key;
 }
 
-/** Check whether a binary is available on PATH. */
+/** Check whether a binary is available on PATH (cached per session). */
+const binaryCache = new Map<string, boolean>();
 function hasBinary(bin: string) {
+  if (binaryCache.has(bin)) return binaryCache.get(bin);
+  let found: boolean;
   try {
     execSync(IS_WIN ? `where ${bin}` : `which ${bin}`, { stdio: "ignore" });
-    return true;
+    found = true;
   } catch {
-    return false;
+    found = false;
   }
+  binaryCache.set(bin, found);
+  return found;
 }
 
 // ─── OpenCode installation detection ─────────────────────────────────────────
