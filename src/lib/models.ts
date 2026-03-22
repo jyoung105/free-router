@@ -136,7 +136,12 @@ function applyTestDrops(models: any[]): any[] {
 
 // ─── NVIDIA NIM hardcoded model list ─────────────────────────────────────────
 // Full list of free chat/instruct models from https://integrate.api.nvidia.com/v1/models
-const NIM_MODELS = [
+let _nimModelsCache: ReturnType<typeof makeModel>[] | null = null;
+function getNimModels() {
+  if (!_nimModelsCache) _nimModelsCache = _buildNimModels();
+  return _nimModelsCache;
+}
+function _buildNimModels() { return [
   // ── S+ tier ────────────────────────────────────────────────────────────────
   makeModel("z-ai/glm5", "GLM 5", 131072, "nvidia"),
   makeModel("moonshotai/kimi-k2.5", "Kimi K2.5", 131072, "nvidia"),
@@ -690,7 +695,7 @@ const NIM_MODELS = [
   makeModel("upstage/solar-10.7b-instruct", "Solar 10.7B", 4096, "nvidia"),
   makeModel("utter-project/eurollm-9b-instruct", "EuroLLM 9B", 8192, "nvidia"),
   makeModel("zyphra/zamba2-7b-instruct", "Zamba2 7B", 8192, "nvidia"),
-];
+]; }
 
 // ─── Shared HTTPS JSON fetcher ───────────────────────────────────────────────
 
@@ -811,7 +816,7 @@ export async function getAllModels(config: any): Promise<any[]> {
           let nimModels = null;
           if (nvidiaKey && !noFetch)
             nimModels = await fetchNimModels(nvidiaKey);
-          const source = nimModels || NIM_MODELS;
+          const source = nimModels || getNimModels();
           return source.map((m) => ({ ...m, pings: [] }));
         })()
       : Promise.resolve([]),

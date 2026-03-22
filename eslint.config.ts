@@ -30,8 +30,14 @@ export default tseslint.config(
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+      // Terminal ANSI escape sequences use control characters intentionally
       "no-control-regex": "off",
+      // Unicode emoji patterns use combining characters intentionally
       "no-misleading-character-class": "off",
+      "@typescript-eslint/consistent-type-imports": ["error", {
+        prefer: "type-imports",
+        fixStyle: "inline-type-imports",
+      }],
       "@typescript-eslint/await-thenable": "error",
       "@typescript-eslint/no-unnecessary-type-assertion": "error",
     },

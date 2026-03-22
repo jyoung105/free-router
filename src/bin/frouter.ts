@@ -55,16 +55,18 @@ import {
   BG_SEL,
 } from "../lib/utils.js";
 import { spawn, spawnSync } from "node:child_process";
-import { readFileSync, realpathSync } from "node:fs";
+import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { basename, dirname, resolve } from "node:path";
+import { basename, dirname } from "node:path";
 import { get as httpsGet } from "node:https";
 import { get as httpGet } from "node:http";
 
+import { createRequire } from "node:module";
+
 // ─── Version ─────────────────────────────────────────────────────────────────
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const PKG_VERSION = JSON.parse(
-  readFileSync(resolve(__dirname, "../../package.json"), "utf8"),
+const PKG_VERSION: string = createRequire(import.meta.url)(
+  "../../package.json",
 ).version;
 
 // ─── ANSI shortcuts ────────────────────────────────────────────────────────────
@@ -1561,7 +1563,7 @@ function inferPreferredUpdateInstaller(): UpdateInstaller | null {
   if (runtimeBin.includes("bun")) return "bun";
 
   const rawHints = [process.argv[1], process.env._, process.env.npm_execpath];
-  let resolvedArgvPath = "";
+  let resolvedArgvPath: string;
   try {
     resolvedArgvPath = process.argv[1] ? realpathSync(process.argv[1]) : "";
   } catch {

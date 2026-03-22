@@ -10,8 +10,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && cp data/model-rankings.json data/model-support.json dist/",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint src --ext .ts,.tsx --max-warnings=0",
-    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "lint": "eslint src --max-warnings=0",
+    "lint:fix": "eslint src --fix",
     "pretest": "npm run build",
     "test": "node --test dist/tests/unit/*.test.js dist/tests/integration/*.test.js dist/tests/security/*.test.js",
     "test:perf": "npm run build && node --expose-gc --test dist/tests/perf/*.perf.test.js",
@@ -60,11 +60,11 @@
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
-    "@eslint/js": "^9.39.3",
-    "@types/node": "^25.3.0",
-    "eslint": "^10.0.3",
-    "globals": "^17.3.0",
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.5.0",
+    "eslint": "^10.1.0",
+    "globals": "^17.4.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.56.1"
+    "typescript-eslint": "^8.57.1"
   }
 }

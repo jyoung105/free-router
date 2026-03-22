@@ -120,13 +120,16 @@ export function applyModelPingResult(
     }
   }
 
-  while (model.pings.length > maxPings) {
-    const removed = model.pings.shift();
+  const excess = model.pings.length - maxPings;
+  if (excess > 0) {
+    const removed = model.pings.splice(0, excess);
     if (metrics) {
-      metrics.count = Math.max(0, metrics.count - 1);
-      if (isReachablePing(removed)) {
-        metrics.okCount = Math.max(0, metrics.okCount - 1);
-        metrics.sumOkMs -= removed.ms;
+      for (const r of removed) {
+        metrics.count = Math.max(0, metrics.count - 1);
+        if (isReachablePing(r)) {
+          metrics.okCount = Math.max(0, metrics.okCount - 1);
+          metrics.sumOkMs -= r.ms;
+        }
       }
     }
   }
@@ -275,7 +278,7 @@ function cmpWithInfinity(a, b) {
 export function sortModels(models, col, asc = true) {
   const dir = asc ? 1 : -1;
   return [...models].sort((a, b) => {
-    let cmp = 0;
+    let cmp: number;
     switch (col) {
       case "priority":
         cmp = cmpPriority(a, b);
@@ -415,13 +418,17 @@ export function truncAnsiToWidth(s, maxVis) {
       continue;
     }
 
-    const [segment] = splitGraphemes(s.slice(i));
-    if (!segment) break;
-    const charWidth = visibleWidth(segment);
-    if (vis + charWidth > maxVis) break;
-    out += segment;
-    vis += charWidth;
-    i += segment.length;
+    // Collect the text run until the next ANSI escape, then segment it once
+    let textEnd = i;
+    while (textEnd < s.length && s[textEnd] !== "\x1b") textEnd++;
+    const textRun = s.slice(i, textEnd);
+    for (const segment of splitGraphemes(textRun)) {
+      const w = visibleWidth(segment);
+      if (vis + w > maxVis) return out;
+      out += segment;
+      vis += w;
+    }
+    i = textEnd;
   }
   return out;
 }
