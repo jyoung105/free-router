@@ -57,7 +57,7 @@ test("pingAllOnce sets status notfound for 404 responses", async () => {
     assert.equal(result.code, "404");
 
     // Simulate the status assignment from pingAllOnce
-    const m = models[0];
+    const m = models[0] as { httpCode: string | null; status: string; pings: any[] };
     const code = String(result.code);
     m.httpCode = code;
     if (code === "200") m.status = "up";
@@ -92,8 +92,8 @@ test("pooled helper limits concurrency", async () => {
     let current = 0;
 
     // Manual concurrency test with the same pattern as pooled()
-    async function pooled(items, limit, fn) {
-      const res = [];
+    async function pooled(items: number[], limit: number, fn: (item: number) => Promise<number>) {
+      const res: number[] = [];
       let idx = 0;
       async function next() {
         const i = idx++;
@@ -203,7 +203,8 @@ test("consecutive fails reset on 200 response", async () => {
 // ─── Verdict for notfound ─────────────────────────────────────────────────────
 
 test("getVerdict returns Not Found for notfound status", async () => {
-  const { getVerdict } = await import("../../lib/utils.js");
+  const { getVerdict: getVerdictDyn } = await import("../../lib/utils.js");
+  const getVerdict = getVerdictDyn as (m: any) => string;
   const model = {
     pings: [{ code: "404", ms: 100 }],
     status: "notfound",

@@ -7,6 +7,7 @@ import { BIN_PATH, ROOT_DIR } from "../helpers/test-paths.js";
 import { createHttpServer } from "../helpers/mock-http.js";
 import { pingAllOnce } from "../../lib/ping.js";
 import { PROVIDERS_META } from "../../lib/config.js";
+import type { Model } from "../../lib/utils.js";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const BASELINE_PATH = join(__dir, "baseline.json");
@@ -15,10 +16,17 @@ const STARTUP_RUNS = Number(process.env.PERF_STARTUP_RUNS ?? "5");
 const PING_RUNS = Number(process.env.PERF_PING_RUNS ?? "5");
 const MODEL_COUNT = Number(process.env.PERF_MODEL_COUNT ?? "40");
 
-function makeFixtureModels(count: number) {
+function makeFixtureModels(count: number): Model[] {
   return Array.from({ length: count }, (_, i) => ({
     id: `demo/model-${i}`,
+    displayName: `model-${i}`,
+    context: 4096,
     providerKey: "nvidia",
+    sweScore: null,
+    tier: "B",
+    aaIntelligence: null,
+    aaSpeedTps: null,
+    opencodeSupported: null,
     pings: [],
     status: "pending",
     httpCode: null,
@@ -63,7 +71,7 @@ async function measurePingMs(): Promise<number> {
       nvidia: { enabled: true },
       openrouter: { enabled: false },
     },
-  };
+  } as any;
 
   try {
     const models = makeFixtureModels(MODEL_COUNT);

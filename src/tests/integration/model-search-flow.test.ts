@@ -13,7 +13,7 @@ import {
 
 const SKIP = process.platform === "win32";
 
-function getLatestFrame(rawOutput, needle) {
+function getLatestFrame(rawOutput: string, needle: string) {
   const chunks = String(rawOutput).split("\x1b[2J\x1b[H");
   for (let i = chunks.length - 1; i >= 0; i--) {
     const frame = stripAnsi(chunks[i]);
@@ -22,7 +22,7 @@ function getLatestFrame(rawOutput, needle) {
   return "";
 }
 
-function getLatestFrameRaw(rawOutput, needle) {
+function getLatestFrameRaw(rawOutput: string, needle: string) {
   const chunks = String(rawOutput).split("\x1b[2J\x1b[H");
   for (let i = chunks.length - 1; i >= 0; i--) {
     if (stripAnsi(chunks[i]).includes(needle)) return chunks[i];
@@ -30,7 +30,7 @@ function getLatestFrameRaw(rawOutput, needle) {
   return "";
 }
 
-function buildInputChunks(tokens, startDelayMs = 850, stepMs = 120) {
+function buildInputChunks(tokens: string[], startDelayMs = 850, stepMs = 120) {
   let delayMs = startDelayMs;
   return tokens.map((data) => {
     const chunk = { delayMs, data };

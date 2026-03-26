@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHttpServer } from "../helpers/mock-http.js";
-import { ping, startPingLoop, stopPingLoop } from "../../lib/ping.js";
+import { ping, startPingLoop as startPingLoopImpl, stopPingLoop } from "../../lib/ping.js";
+const startPingLoop = startPingLoopImpl as (models: any[], config: any, intervalMs: number, onUpdate: () => void) => any;
 
 // ─── ping timeout scenario ───────────────────────────────────────────────────
 
@@ -86,7 +87,7 @@ test("stopPingLoop handles null/undefined ref gracefully", () => {
 
 test("stopPingLoop prevents further rounds", async () => {
   let updateCount = 0;
-  const models = [];
+  const models: any[] = [];
 
   const ref = startPingLoop(models, { apiKeys: {} }, 50, () => {
     updateCount++;

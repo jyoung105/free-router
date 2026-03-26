@@ -4,6 +4,7 @@ import { createHttpServer } from "../helpers/mock-http.js";
 import { pingAllOnce } from "../../lib/ping.js";
 import { PROVIDERS_META } from "../../lib/config.js";
 import { assertModelMetricsInvariant } from "../../lib/utils.js";
+import type { Model } from "../../lib/utils.js";
 
 const modelCount = Number(process.env.PERF_MODEL_COUNT ?? "40");
 const rounds = Number(process.env.PERF_MEMORY_ROUNDS ?? "140");
@@ -11,11 +12,17 @@ const absHeapDeltaCeilingMb = Number(
   process.env.PERF_MEMORY_ABS_HEAP_DELTA_MB ?? "3",
 );
 
-function makeFixtureModels(count: number) {
+function makeFixtureModels(count: number): Model[] {
   return Array.from({ length: count }, (_, i) => ({
     id: `demo/model-${i}`,
+    displayName: `model-${i}`,
+    context: 4096,
     providerKey: "nvidia",
+    sweScore: null,
     tier: "A",
+    aaIntelligence: null,
+    aaSpeedTps: null,
+    opencodeSupported: null,
     pings: [],
     status: "pending",
     httpCode: null,
@@ -45,7 +52,7 @@ test("perf: memory stays within long-run heap delta ceiling", async (t) => {
       nvidia: { enabled: true },
       openrouter: { enabled: false },
     },
-  };
+  } as any;
 
   try {
     const models = makeFixtureModels(modelCount);

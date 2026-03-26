@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getAllModels } from "../../lib/models.js";
+import { getAllModels as getAllModelsImpl } from "../../lib/models.js";
+const getAllModels = getAllModelsImpl as (config: any) => ReturnType<typeof getAllModelsImpl>;
 
 async function withCleanEnv(run: () => Promise<void>) {
   const prevNv = process.env.NVIDIA_API_KEY;

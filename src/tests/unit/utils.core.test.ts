@@ -1,14 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  getAvg,
-  getUptime,
-  getVerdict,
-  tierColor,
+  getAvg as getAvgImpl,
+  getUptime as getUptimeImpl,
+  getVerdict as getVerdictImpl,
+  tierColor as tierColorImpl,
   latColor,
   uptimeColor,
-  filterByTier,
-  sortModels,
+  filterByTier as filterByTierImpl,
+  sortModels as sortModelsImpl,
   visLen,
   pad,
   truncAnsiToWidth,
@@ -24,6 +24,12 @@ import {
   BG_SEL,
   TIER_CYCLE,
 } from "../../lib/utils.js";
+const getAvg = getAvgImpl as (m: any) => number;
+const getUptime = getUptimeImpl as (m: any) => number;
+const getVerdict = getVerdictImpl as (m: any) => string;
+const tierColor = tierColorImpl as (t: any) => string;
+const filterByTier = filterByTierImpl as (models: any[], tier: string) => any[];
+const sortModels = sortModelsImpl as (models: any[], col: string, asc?: boolean) => any[];
 
 // ─── getAvg ──────────────────────────────────────────────────────────────────
 

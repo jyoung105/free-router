@@ -5,6 +5,7 @@ import { useState, useRef } from "react";
 import { Text, Box, useInput } from "ink";
 import { PasswordInput, StatusMessage } from "@inkjs/ui";
 import { useMountEffect } from "./useMountEffect.js";
+import type { FrouterConfig } from "../lib/config.js";
 
 type ProviderMeta = {
   name: string;
@@ -15,7 +16,7 @@ type ProviderMeta = {
 };
 
 export type SettingsResult = {
-  config: any;
+  config: FrouterConfig;
 };
 
 function formatPingResult(r: { code: string; ms?: number }): string {
@@ -25,11 +26,11 @@ function formatPingResult(r: { code: string; ms?: number }): string {
 }
 
 export type SettingsAppProps = {
-  config: any;
+  config: FrouterConfig;
   providers: Record<string, ProviderMeta>;
-  getApiKey: (config: any, pk: string) => string | null;
+  getApiKey: (config: FrouterConfig, pk: string) => string | null;
   validateKey: (pk: string, raw: string) => { ok: boolean; key?: string; reason?: string };
-  saveConfig: (config: any) => void;
+  saveConfig: (config: FrouterConfig) => void;
   ping: (key: string | null, model: string, url: string) => Promise<{ code: string; ms?: number }>;
   openBrowser?: (url: string) => void;
   initialMode?: "navigate" | "editKey";
@@ -144,7 +145,7 @@ export function SettingsApp({
       // Toggle provider
       const next = { ...config };
       next.providers ??= {};
-      next.providers[selectedPk] ??= {};
+      next.providers[selectedPk] ??= { enabled: true };
       next.providers[selectedPk].enabled = !(next.providers[selectedPk].enabled !== false);
       setConfig(next);
       saveConfig(next);
@@ -214,7 +215,7 @@ export function SettingsApp({
         showNotice(`Invalid key for ${currentMeta.name}: ${checked.reason}`, "error");
         return;
       }
-      next.apiKeys[selectedPk] = checked.key;
+      next.apiKeys[selectedPk] = checked.key!;
       showNotice(`Saved ${currentMeta.name} key`, "success");
     } else {
       delete next.apiKeys[selectedPk];

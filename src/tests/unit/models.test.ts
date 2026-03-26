@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import https from "node:https";
-import { getAllModels } from "../../lib/models.js";
+import { getAllModels as getAllModelsImpl } from "../../lib/models.js";
+const getAllModels = getAllModelsImpl as (config: any) => ReturnType<typeof getAllModelsImpl>;
 
 type MockOutcome =
   | { type: "response"; statusCode?: number; body: string }

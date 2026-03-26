@@ -12,9 +12,43 @@ export const WHITE = "\x1b[37m";
 export const ORANGE = "\x1b[38;5;208m";
 export const BG_SEL = "\x1b[48;5;235m"; // subtle selection highlight
 
+// ─── Shared types ─────────────────────────────────────────────────────────────
+
+export type PingEntry = { code: string; ms: number; detail?: string };
+
+export type ModelMetrics = {
+  version: number;
+  count: number;
+  okCount: number;
+  sumOkMs: number;
+};
+
+export type Model = {
+  id: string;
+  displayName: string;
+  context: number;
+  providerKey: string;
+  sweScore: number | null;
+  tier: string;
+  aaIntelligence: number | null;
+  aaSpeedTps: number | null;
+  opencodeSupported: boolean | null;
+  pings: PingEntry[];
+  status: string;
+  httpCode: string | null;
+  _metrics?: ModelMetrics;
+  _consecutiveFails?: number;
+  _skipUntilRound?: number;
+  _seqEpoch?: number;
+  _nextSeq?: number;
+  _lastCommitEpoch?: number;
+  _lastCommitSeq?: number;
+  _staleCommitDrops?: number;
+};
+
 // ─── Tier order ────────────────────────────────────────────────────────────────
 export const TIER_CYCLE = ["All", "S+", "S", "A+", "A", "A-", "B+", "B", "C"];
-export const TIER_ORDER = {
+export const TIER_ORDER: Record<string, number> = {
   "S+": 0,
   S: 1,
   "A+": 2,
@@ -30,13 +64,6 @@ export const TIER_ORDER = {
 const METRICS_CACHE_VERSION = 1;
 const METRICS_CACHE_ENABLED = process.env.FROUTER_METRICS_CACHE !== "0";
 
-type ModelMetrics = {
-  version: number;
-  count: number;
-  okCount: number;
-  sumOkMs: number;
-};
-
 function emptyMetrics(): ModelMetrics {
   return {
     version: METRICS_CACHE_VERSION,
@@ -50,11 +77,11 @@ function isFiniteMs(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
-function isReachablePing(ping: any): boolean {
+function isReachablePing(ping: PingEntry): boolean {
   return (ping?.code === "200" || ping?.code === "401") && isFiniteMs(ping?.ms);
 }
 
-function recomputeMetricsFromPings(pings: any[]): ModelMetrics {
+function recomputeMetricsFromPings(pings: PingEntry[]): ModelMetrics {
   const metrics = emptyMetrics();
   for (const ping of pings) {
     metrics.count++;
@@ -66,7 +93,7 @@ function recomputeMetricsFromPings(pings: any[]): ModelMetrics {
   return metrics;
 }
 
-function hasValidMetrics(model: any): boolean {
+function hasValidMetrics(model: Model): boolean {
   const m = model?._metrics;
   return (
     !!m &&
@@ -80,20 +107,20 @@ function hasValidMetrics(model: any): boolean {
   );
 }
 
-function ensureMetrics(model: any): ModelMetrics | null {
+function ensureMetrics(model: Model): ModelMetrics | null {
   if (!METRICS_CACHE_ENABLED) return null;
   if (!Array.isArray(model.pings)) model.pings = [];
   if (!hasValidMetrics(model)) {
     model._metrics = recomputeMetricsFromPings(model.pings);
   }
-  return model._metrics;
+  return model._metrics ?? null;
 }
 
 export function isMetricsCacheEnabled(): boolean {
   return METRICS_CACHE_ENABLED;
 }
 
-export function rebuildModelMetrics(model: any): ModelMetrics | null {
+export function rebuildModelMetrics(model: Model): ModelMetrics | null {
   if (!Array.isArray(model.pings)) model.pings = [];
   if (!METRICS_CACHE_ENABLED) {
     delete model._metrics;
@@ -104,8 +131,8 @@ export function rebuildModelMetrics(model: any): ModelMetrics | null {
 }
 
 export function applyModelPingResult(
-  model: any,
-  pingResult: any,
+  model: Model,
+  pingResult: PingEntry,
   maxPings: number,
 ): void {
   if (!Array.isArray(model.pings)) model.pings = [];
@@ -135,7 +162,7 @@ export function applyModelPingResult(
   }
 }
 
-export function assertModelMetricsInvariant(model: any): {
+export function assertModelMetricsInvariant(model: Model): {
   ok: boolean;
   reason?: string;
 } {
@@ -169,19 +196,19 @@ export function assertModelMetricsInvariant(model: any): {
 // ─── Stats ─────────────────────────────────────────────────────────────────────
 
 /** Average latency from HTTP 200 pings only. Returns Infinity if none yet. */
-export function getAvg(model) {
+export function getAvg(model: Model): number {
   const metrics = ensureMetrics(model);
   if (metrics) {
     if (!metrics.okCount) return Infinity;
     return metrics.sumOkMs / metrics.okCount;
   }
-  const ok = model.pings.filter((p) => p.code === "200" || p.code === "401");
+  const ok = model.pings.filter((p: PingEntry) => p.code === "200" || p.code === "401");
   if (!ok.length) return Infinity;
-  return ok.reduce((s, p) => s + p.ms, 0) / ok.length;
+  return ok.reduce((s: number, p: PingEntry) => s + p.ms, 0) / ok.length;
 }
 
 /** Uptime % = HTTP 200 pings / total pings x 100. */
-export function getUptime(model) {
+export function getUptime(model: Model): number {
   const metrics = ensureMetrics(model);
   if (metrics) {
     if (!metrics.count) return 0;
@@ -196,13 +223,13 @@ export function getUptime(model) {
 // ─── Verdict ───────────────────────────────────────────────────────────────────
 
 /** Strict-priority verdict for a model (conditions before latency). */
-export function getVerdict(model) {
+export function getVerdict(model: Model): string {
   const last = model.pings.at(-1);
   const avg = getAvg(model);
   const metrics = ensureMetrics(model);
   const everUp = metrics
     ? metrics.okCount > 0
-    : model.pings.some((p) => p.code === "200");
+    : model.pings.some((p: PingEntry) => p.code === "200");
 
   if (model.status === "ratelimit" || last?.code === "429")
     return "🔥 Overloaded";
@@ -223,20 +250,20 @@ export function getVerdict(model) {
 
 // ─── Color helpers ─────────────────────────────────────────────────────────────
 
-export function tierColor(tier) {
+export function tierColor(tier: string): string {
   if (tier === "S+" || tier === "S") return WHITE + B;
   if (tier?.startsWith("A")) return YELLOW;
   if (tier === "B+" || tier === "B") return ORANGE;
   return RED;
 }
 
-export function latColor(ms) {
+export function latColor(ms: number): string {
   if (ms < 500) return GREEN;
   if (ms < 1500) return YELLOW;
   return RED;
 }
 
-export function uptimeColor(pct) {
+export function uptimeColor(pct: number): string {
   if (pct >= 90) return GREEN;
   if (pct >= 70) return YELLOW;
   if (pct >= 50) return ORANGE;
@@ -245,15 +272,15 @@ export function uptimeColor(pct) {
 
 // ─── Filtering ─────────────────────────────────────────────────────────────────
 
-export function filterByTier(models, tier) {
+export function filterByTier(models: Model[], tier: string): Model[] {
   if (tier === "All") return models;
   return models.filter((m) => m.tier === tier);
 }
 
-export function filterBySearch(models, query) {
+export function filterBySearch(models: Model[], query: string): Model[] {
   if (!query) return models;
   const q = query.toLowerCase();
-  return models.filter((m) =>
+  return models.filter((m: Model) =>
     `${m.id} ${m.displayName || ""}`.toLowerCase().includes(q),
   );
 }
@@ -261,7 +288,7 @@ export function filterBySearch(models, query) {
 // ─── Sorting ───────────────────────────────────────────────────────────────────
 
 /** Return the first non-zero value from a list of comparator results. */
-function firstNonZero(...values) {
+function firstNonZero(...values: number[]): number {
   for (const v of values) {
     if (v !== 0) return v;
   }
@@ -269,13 +296,13 @@ function firstNonZero(...values) {
 }
 
 /** Compare two values where Infinity means "no data" and sorts last. */
-function cmpWithInfinity(a, b) {
+function cmpWithInfinity(a: number, b: number): number {
   if (a === Infinity) return b === Infinity ? 0 : 1;
   if (b === Infinity) return -1;
   return a - b;
 }
 
-export function sortModels(models, col, asc = true) {
+export function sortModels(models: Model[], col: string, asc = true): Model[] {
   const dir = asc ? 1 : -1;
   return [...models].sort((a, b) => {
     let cmp: number;
@@ -320,11 +347,11 @@ export function sortModels(models, col, asc = true) {
   });
 }
 
-function cmpAvg(a, b) {
+function cmpAvg(a: Model, b: Model): number {
   return cmpWithInfinity(getAvg(a), getAvg(b));
 }
 
-function cmpLatest(a, b) {
+function cmpLatest(a: Model, b: Model): number {
   const al = a.pings.at(-1),
     bl = b.pings.at(-1);
   const am = al?.code === "200" ? al.ms : Infinity;
@@ -332,7 +359,7 @@ function cmpLatest(a, b) {
   return cmpWithInfinity(am, bm);
 }
 
-function cmpPriority(a, b) {
+function cmpPriority(a: Model, b: Model): number {
   return firstNonZero(
     (a.status === "up" ? 0 : 1) - (b.status === "up" ? 0 : 1),
     (TIER_ORDER[a.tier] ?? 99) - (TIER_ORDER[b.tier] ?? 99),
@@ -344,7 +371,7 @@ function cmpPriority(a, b) {
   );
 }
 
-const VERDICT_RANK = {
+const VERDICT_RANK: Record<string, number> = {
   "🚀 Perfect": 0,
   "✅ Normal": 1,
   "🐢 Slow": 2,
@@ -358,14 +385,14 @@ const VERDICT_RANK = {
   "🚫 Not Found": 10,
   "⏳ Pending": 11,
 };
-function verdictRank(v) {
+function verdictRank(v: string): number {
   return VERDICT_RANK[v] ?? 11;
 }
 
 // ─── Best model (--best mode) ──────────────────────────────────────────────────
 
-export function findBestModel(models) {
-  const candidates = models.filter((m) => m.pings.length > 0);
+export function findBestModel(models: Model[]): Model | null {
+  const candidates = models.filter((m: Model) => m.pings.length > 0);
   if (!candidates.length) return null;
   return [...candidates].sort(cmpPriority)[0];
 }
@@ -382,7 +409,7 @@ const GRAPHEME_SEGMENTER =
     ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
     : null;
 
-export function splitGraphemes(s) {
+export function splitGraphemes(s: string): string[] {
   const str = String(s);
   if (!str) return [];
   if (GRAPHEME_SEGMENTER) {
@@ -394,14 +421,14 @@ export function splitGraphemes(s) {
   return Array.from(str);
 }
 
-export function visibleWidth(s) {
+export function visibleWidth(s: string): number {
   const str = String(s);
   if (!str) return 0;
   if (/^[\x00-\x7f]+$/.test(str)) return str.length;
   return WIDE_EMOJI_RE.test(str) ? 2 : 1;
 }
 
-export function truncAnsiToWidth(s, maxVis) {
+export function truncAnsiToWidth(s: string, maxVis: number): string {
   let vis = 0;
   let out = "";
   let i = 0;
@@ -433,7 +460,7 @@ export function truncAnsiToWidth(s, maxVis) {
   return out;
 }
 
-export function visLen(s) {
+export function visLen(s: string): number {
   const stripped = String(s).replace(ANSI_RE, "");
   if (!/[^\x00-\x7f]/.test(stripped)) return stripped.length;
   let width = 0;
@@ -443,7 +470,7 @@ export function visLen(s) {
   return width;
 }
 
-export function pad(s, n, right = false) {
+export function pad(s: string, n: number, right = false): string {
   const str = String(s);
   const spaces = Math.max(0, n - visLen(str));
   return right ? " ".repeat(spaces) + str : str + " ".repeat(spaces);

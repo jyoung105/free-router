@@ -1,8 +1,8 @@
 // src/lib/ping.ts — single ping, parallel batch, continuous re-ping loop
 import http from "node:http";
 import https from "node:https";
-import { getApiKey, PROVIDERS_META } from "./config.js";
-import { TIER_ORDER, applyModelPingResult } from "./utils.js";
+import { type FrouterConfig, getApiKey, PROVIDERS_META } from "./config.js";
+import { type Model, TIER_ORDER, applyModelPingResult } from "./utils.js";
 
 const TIMEOUT_MS = 6_000; // steady-state ping timeout
 const INITIAL_TIMEOUT_MS = 2_500; // faster first-pass to clear pending sooner
@@ -11,7 +11,7 @@ const PING_CONCURRENCY = 20; // steady-state concurrency
 const INITIAL_PING_CONCURRENCY = 64; // first-pass concurrency for pending models
 const BACKOFF_THRESHOLD = 3; // Phase 2F: lowered from 5 — stop wasting slots sooner
 
-type PingResult = { code: string; ms: number; detail?: string };
+export type PingResult = { code: string; ms: number; detail?: string };
 type PingOptions = { timeoutMs?: number };
 
 const STATUS_MAP: Record<string, string> = {
@@ -82,7 +82,7 @@ export function bumpPingEpoch(): number {
   return _epoch;
 }
 
-function nextSeqForEpoch(model: any, epoch: number): number {
+function nextSeqForEpoch(model: Model, epoch: number): number {
   if (model._seqEpoch !== epoch) {
     model._seqEpoch = epoch;
     model._nextSeq = 0;
@@ -91,7 +91,7 @@ function nextSeqForEpoch(model: any, epoch: number): number {
   return model._nextSeq;
 }
 
-function isStaleCommit(model: any, epoch: number, seq: number): boolean {
+function isStaleCommit(model: Model, epoch: number, seq: number): boolean {
   // Epoch bumps invalidate all older in-flight results.
   if (epoch < _epoch) return true;
   const lastEpoch = model._lastCommitEpoch || 0;
@@ -116,7 +116,7 @@ export function ping(
   return new Promise((resolve) => {
     const requestedTimeout = options.timeoutMs;
     const timeoutMs =
-      Number.isFinite(requestedTimeout) && requestedTimeout > 0
+      requestedTimeout != null && Number.isFinite(requestedTimeout) && requestedTimeout > 0
         ? Math.round(requestedTimeout)
         : TIMEOUT_MS;
     const url = new URL(chatUrl);
@@ -183,10 +183,10 @@ export function ping(
  * Mutates each model: .pings[], .status, .httpCode, ._consecutiveFails, ._skipUntilRound
  */
 export async function pingAllOnce(
-  models: any[],
-  config: any,
+  models: Model[],
+  config: FrouterConfig,
   onEachPing?: () => void,
-) {
+): Promise<void> {
   _roundCounter++;
 
   const toPing = models.filter((m) => {
@@ -211,7 +211,7 @@ export async function pingAllOnce(
     (m) => Array.isArray(m.pings) && m.pings.length > 0,
   );
 
-  async function runPing(m: any, timeoutMs: number) {
+  async function runPing(m: Model, timeoutMs: number) {
     const meta = PROVIDERS_META[m.providerKey];
     const apiKey = getApiKey(config, m.providerKey);
     const commitEpoch = _epoch;
@@ -272,13 +272,13 @@ export async function pingAllOnce(
  * Calls onUpdate() after each completed round, and onEachPing() after each individual ping.
  */
 export function startPingLoop(
-  models: any[],
-  config: any,
+  models: Model[],
+  config: FrouterConfig,
   intervalMs: number,
   onUpdate?: () => void,
   onEachPing?: () => void,
 ) {
-  const ref = { running: true, timer: null };
+  const ref: { running: boolean; timer: ReturnType<typeof setTimeout> | null } = { running: true, timer: null };
 
   async function tick() {
     if (!ref.running) return;

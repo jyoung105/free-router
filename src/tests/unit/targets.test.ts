@@ -15,7 +15,7 @@ import { cleanupTempHome, makeTempHome } from "../helpers/temp-home.js";
 
 const TARGETS_MODULE_PATH = join(ROOT_DIR, "lib", "targets.js");
 
-async function withTempTargetsModule(fn) {
+async function withTempTargetsModule(fn: (mod: any) => Promise<void>) {
   const home = makeTempHome();
   const prevHome = process.env.HOME;
   process.env.HOME = home;

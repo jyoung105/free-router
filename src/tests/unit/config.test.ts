@@ -14,7 +14,7 @@ import { cleanupTempHome, makeTempHome } from "../helpers/temp-home.js";
 
 const CONFIG_MODULE_PATH = join(ROOT_DIR, "lib", "config.js");
 
-async function withTempConfigModule(fn) {
+async function withTempConfigModule(fn: (mod: any) => Promise<void>) {
   const home = makeTempHome();
   const prevHome = process.env.HOME;
   const prevNv = process.env.NVIDIA_API_KEY;

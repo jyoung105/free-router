@@ -4,15 +4,16 @@ import { createServer } from "node:net";
 import { performance } from "node:perf_hooks";
 import { createHttpServer } from "../helpers/mock-http.js";
 import { PROVIDERS_META } from "../../lib/config.js";
-import { pingAllOnce } from "../../lib/ping.js";
+import { pingAllOnce as pingAllOnceImpl } from "../../lib/ping.js";
+const pingAllOnce = pingAllOnceImpl as (models: any[], config: any) => Promise<void>;
 
 function makePendingModels(count: number) {
   return Array.from({ length: count }, (_, i) => ({
     id: `demo/model-${i}`,
     providerKey: "nvidia",
-    pings: [],
+    pings: [] as any[],
     status: "pending",
-    httpCode: null,
+    httpCode: null as string | null,
   }));
 }
 
@@ -22,7 +23,7 @@ const testConfig = {
     nvidia: { enabled: true },
     openrouter: { enabled: false },
   },
-};
+} as any;
 
 test("pingAllOnce resolves first-pass pending statuses quickly", async () => {
   const server = await createHttpServer((req) => {

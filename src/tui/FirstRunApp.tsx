@@ -161,9 +161,9 @@ export function FirstRunApp({
         ) : (
           <>
             <Text>
-              <Text bold>{currentMeta.name}</Text>
+              <Text bold>{currentMeta!.name}</Text>
               <Text dimColor>  Free key at: </Text>
-              <Text color="cyan">{currentMeta.signupUrl}</Text>
+              <Text color="cyan">{currentMeta!.signupUrl}</Text>
             </Text>
 
             {step === "choose" && (
@@ -179,7 +179,7 @@ export function FirstRunApp({
                   ]}
                   onChange={(val) => {
                     if (val === "open") {
-                      openBrowser(currentMeta.signupUrl);
+                      openBrowser(currentMeta!.signupUrl);
                       setStep("input");
                     } else if (val === "manual") {
                       setStep("input");
@@ -195,9 +195,9 @@ export function FirstRunApp({
 
             {step === "input" && (
               <Box marginTop={1} flexDirection="column">
-                <Text dimColor>Paste your {currentMeta.name} API key (Enter to submit, Esc to skip):</Text>
+                <Text dimColor>Paste your {currentMeta!.name} API key (Enter to submit, Esc to skip):</Text>
                 <PasswordInput
-                  placeholder={currentMeta.keyPrefix ? `${currentMeta.keyPrefix}...` : "paste key here"}
+                  placeholder={currentMeta!.keyPrefix ? `${currentMeta!.keyPrefix}...` : "paste key here"}
                   onSubmit={(value) => {
                     if (!value) {
                       advanceProvider(apiKeys);
@@ -208,7 +208,7 @@ export function FirstRunApp({
                       setError(checked.reason || "Invalid key");
                       return;
                     }
-                    const nextApiKeys = { ...apiKeys, [currentPk]: checked.key };
+                    const nextApiKeys = { ...apiKeys, [currentPk]: checked.key! };
                     setApiKeys(nextApiKeys);
                     setError("");
                     advanceProvider(nextApiKeys);

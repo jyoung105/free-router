@@ -5,7 +5,7 @@ import { createHttpServer } from "../helpers/mock-http.js";
 import { ping } from "../../lib/ping.js";
 
 test("ping sends Authorization header when API key is provided", async () => {
-  let authHeader = null;
+  let authHeader: string | null = null;
   const server = await createHttpServer((req, res) => {
     authHeader = req.headers.authorization ?? null;
     req.on("data", () => {});
@@ -29,7 +29,7 @@ test("ping sends Authorization header when API key is provided", async () => {
 });
 
 test("ping omits Authorization header when API key is missing", async () => {
-  let authHeader = "not-checked";
+  let authHeader: string | null = "not-checked";
   const server = await createHttpServer((req, res) => {
     authHeader = req.headers.authorization ?? null;
     req.on("data", () => {});

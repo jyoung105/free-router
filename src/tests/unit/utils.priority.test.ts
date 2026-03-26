@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { sortModels, findBestModel } from "../../lib/utils.js";
+import type { PingEntry } from "../../lib/utils.js";
+import { sortModels as sortModelsImpl, findBestModel as findBestModelImpl } from "../../lib/utils.js";
+const sortModels = sortModelsImpl as (models: any[], col: string, asc?: boolean) => any[];
+const findBestModel = findBestModelImpl as (models: any[]) => any;
 
 function model({
   id,
@@ -8,7 +11,14 @@ function model({
   providerKey = "nvidia",
   tier = "S",
   status = "up",
-  pings = [],
+  pings = [] as PingEntry[],
+}: {
+  id: string;
+  displayName?: string;
+  providerKey?: string;
+  tier?: string;
+  status?: string;
+  pings?: PingEntry[];
 }) {
   return { id, displayName, providerKey, tier, status, pings };
 }

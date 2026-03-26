@@ -13,8 +13,26 @@ import { R, B, D, RED, GREEN, CYAN } from "./utils.js";
 
 export const CONFIG_PATH = join(homedir(), ".frouter.json");
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export type ProviderMeta = {
+  name: string;
+  envVar: string;
+  keyPrefix: string;
+  signupUrl: string;
+  chatUrl: string;
+  modelsUrl: string;
+  testModel: string;
+};
+
+export type FrouterConfig = {
+  apiKeys: Record<string, string>;
+  providers: Record<string, { enabled: boolean }>;
+  ui: { scrollSortPauseMs: number };
+};
+
 // ─── Provider metadata ────────────────────────────────────────────────────────
-export const PROVIDERS_META = {
+export const PROVIDERS_META: Record<string, ProviderMeta> = {
   nvidia: {
     name: "NVIDIA NIM",
     envVar: "NVIDIA_API_KEY",
@@ -37,7 +55,7 @@ export const PROVIDERS_META = {
 
 // ─── Config I/O ───────────────────────────────────────────────────────────────
 
-export function loadConfig() {
+export function loadConfig(): FrouterConfig {
   const defaults = {
     apiKeys: {},
     providers: {
@@ -75,7 +93,7 @@ export function loadConfig() {
   }
 }
 
-export function saveConfig(config) {
+export function saveConfig(config: FrouterConfig): void {
   writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + "\n", {
     mode: 0o600,
   });
@@ -89,17 +107,17 @@ export function saveConfig(config) {
 /**
  * Priority: env var > config file > null (keyless ping)
  */
-export function getApiKey(config, providerKey) {
+export function getApiKey(config: FrouterConfig, providerKey: string): string | null {
   const meta = PROVIDERS_META[providerKey];
   if (!meta) return null;
   return process.env[meta.envVar] || config?.apiKeys?.[providerKey] || null;
 }
 
-export function normalizeApiKeyInput(value) {
+export function normalizeApiKeyInput(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-export function validateProviderApiKey(providerKey, rawValue) {
+export function validateProviderApiKey(providerKey: string, rawValue: unknown) {
   const meta = PROVIDERS_META[providerKey];
   if (!meta) return { ok: false, reason: `Unknown provider: ${providerKey}` };
 
@@ -116,7 +134,7 @@ export function validateProviderApiKey(providerKey, rawValue) {
 // ─── Browser helper ───────────────────────────────────────────────────────────
 
 export function openBrowser(url: string) {
-  const commands = {
+  const commands: Record<string, string> = {
     darwin: `open "${url}"`,
     win32: `start "" "${url}"`,
   };
@@ -189,7 +207,7 @@ export function promptMasked(promptText: string): Promise<string> {
  * For each provider: open browser → masked key input → validate prefix → save.
  * Returns updated config.
  */
-export async function runFirstRunWizard(config: any) {
+export async function runFirstRunWizard(config: FrouterConfig) {
   const w = (s: string) => process.stdout.write(s);
 
   w("\x1b[2J\x1b[H");
@@ -228,7 +246,7 @@ export async function runFirstRunWizard(config: any) {
         continue;
       }
 
-      config.apiKeys[pk] = checked.key;
+      config.apiKeys[pk] = checked.key!;
       w(`${GREEN}  ✓ Key saved${R}\n\n`);
       break;
     }

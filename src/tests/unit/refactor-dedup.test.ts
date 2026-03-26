@@ -2,9 +2,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  visLen,
+  visLen as visLenImpl,
   pad,
-  sortModels,
+  sortModels as sortModelsImpl,
   TIER_CYCLE,
   TIER_ORDER,
   R,
@@ -13,6 +13,8 @@ import {
   GREEN,
   RED,
 } from "../../lib/utils.js";
+const visLen = visLenImpl as (s: any) => number;
+const sortModels = sortModelsImpl as (models: any[], col: string, asc?: boolean) => any[];
 
 // ─── 1. TIER_ORDER export & shape ────────────────────────────────────────────
 

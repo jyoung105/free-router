@@ -24,7 +24,7 @@ const PKG_VERSION = JSON.parse(
 ).version;
 const NEXT_PKG_VERSION = PKG_VERSION.replace(
   /^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$/,
-  (_match, major, minor, patch) =>
+  (_match: string, major: string, minor: string, patch: string) =>
     `${major}.${minor}.${Number.parseInt(patch, 10) + 1}`,
 );
 

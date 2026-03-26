@@ -8,6 +8,7 @@ import { createHttpServer } from "../helpers/mock-http.js";
 import { pingAllOnce } from "../../lib/ping.js";
 import { PROVIDERS_META } from "../../lib/config.js";
 import { assertModelMetricsInvariant } from "../../lib/utils.js";
+import type { Model } from "../../lib/utils.js";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const baselineFilePath = join(__dir, "baseline.json");
@@ -35,10 +36,17 @@ function resolveBaselinePingMs(): number {
 
 const modelCount = Number(process.env.PERF_MODEL_COUNT ?? "40");
 
-function makeFixtureModels(count: number) {
+function makeFixtureModels(count: number): Model[] {
   return Array.from({ length: count }, (_, i) => ({
     id: `demo/model-${i}`,
+    displayName: `model-${i}`,
+    context: 4096,
     providerKey: "nvidia",
+    sweScore: null,
+    tier: "B",
+    aaIntelligence: null,
+    aaSpeedTps: null,
+    opencodeSupported: null,
     pings: [],
     status: "pending",
     httpCode: null,
@@ -65,7 +73,7 @@ test("perf: pingAllOnce stays within absolute and baseline budgets", async () =>
       nvidia: { enabled: true },
       openrouter: { enabled: false },
     },
-  };
+  } as any;
 
   try {
     const models = makeFixtureModels(modelCount);

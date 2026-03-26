@@ -4,11 +4,23 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join, dirname } from "node:path";
 import { getApiKey } from "./config.js";
+import { type FrouterConfig } from "./config.js";
+import { type Model } from "./utils.js";
 
 // ─── model-rankings.json lookup ────────────────────────────────────────────────
 
-let _byId: Map<string, any> | null = null;
-let _bySlug: Map<string, any> | null = null;
+type RankingEntry = {
+  model_id: string;
+  aa_slug?: string;
+  swe_bench?: string;
+  tier?: string;
+  aa_intelligence?: number;
+  aa_speed_tps?: number;
+  opencode_supported?: boolean;
+};
+
+let _byId: Map<string, RankingEntry> | null = null;
+let _bySlug: Map<string, RankingEntry> | null = null;
 let _getAllModelsCallCount = 0;
 
 function loadRankings(): void {
@@ -80,7 +92,7 @@ function makeModel(
   displayName: string,
   context: number,
   providerKey: string,
-) {
+): Model {
   const ranking = lookupRankings(id);
   const sweScore = ranking?.swe_bench ? parseFloat(ranking.swe_bench) : null;
   const tier = ranking?.tier || scoreTier(sweScore);
@@ -122,7 +134,7 @@ function parseTestDropSpec(raw: string | undefined): TestDropSpec | null {
   return { afterCall, targets };
 }
 
-function applyTestDrops(models: any[]): any[] {
+function applyTestDrops(models: Model[]): Model[] {
   // Integration-test hook:
   // FROUTER_TEST_DROP_MODEL_AFTER_CALL='2:nvidia/deepseek-ai/deepseek-v3.2'
   // or multiple targets via comma separation.
@@ -744,7 +756,7 @@ function fetchJsonArray<T>(
 
 // ─── NVIDIA NIM dynamic fetch ─────────────────────────────────────────────────
 
-async function fetchNimModels(apiKey: string | null): Promise<any[] | null> {
+async function fetchNimModels(apiKey: string | null): Promise<Model[] | null> {
   const data = await fetchJsonArray(
     "integrate.api.nvidia.com",
     "/v1/models",
@@ -762,7 +774,7 @@ async function fetchNimModels(apiKey: string | null): Promise<any[] | null> {
           .split("/")
           .pop()
           .replace(/-/g, " ")
-          .replace(/\b\w/g, (c) => c.toUpperCase()),
+          .replace(/\b\w/g, (c: string) => c.toUpperCase()),
         m.context_length || 32768,
         "nvidia",
       ),
@@ -772,7 +784,7 @@ async function fetchNimModels(apiKey: string | null): Promise<any[] | null> {
 
 // ─── OpenRouter dynamic fetch ─────────────────────────────────────────────────
 
-async function fetchOpenRouterModels(apiKey: string | null): Promise<any[]> {
+async function fetchOpenRouterModels(apiKey: string | null): Promise<Model[]> {
   const data = await fetchJsonArray(
     "openrouter.ai",
     "/api/v1/models",
@@ -800,10 +812,10 @@ async function fetchOpenRouterModels(apiKey: string | null): Promise<any[]> {
  * Each model has: id, displayName, context, providerKey, sweScore, tier,
  *                 pings:[], status:'pending', httpCode:null
  */
-export async function getAllModels(config: any): Promise<any[]> {
+export async function getAllModels(config: FrouterConfig): Promise<Model[]> {
   _getAllModelsCallCount++;
   const noFetch = process.env.FROUTER_NO_FETCH === "1";
-  const results: any[] = [];
+  const results: Model[] = [];
 
   // Phase 1C: fetch from both providers in parallel
   const nvidiaEnabled = config.providers?.nvidia?.enabled !== false;

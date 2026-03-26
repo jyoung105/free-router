@@ -14,7 +14,7 @@ import {
 } from "../helpers/temp-home.js";
 import { runNode } from "../helpers/spawn-cli.js";
 
-async function waitForFile(path, timeoutMs = 1500) {
+async function waitForFile(path: string, timeoutMs = 1500) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     if (existsSync(path)) return true;

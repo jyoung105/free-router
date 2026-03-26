@@ -12,6 +12,7 @@ import {
 import { homedir, platform } from "node:os";
 import { join, dirname } from "node:path";
 import { PROVIDERS_META, validateProviderApiKey } from "./config.js";
+import { type Model } from "./utils.js";
 
 const OPENCODE_PATH = join(homedir(), ".config", "opencode", "opencode.json");
 const OPENCLAW_PATH = join(homedir(), ".openclaw", "openclaw.json");
@@ -19,7 +20,7 @@ const IS_WIN = platform() === "win32";
 let cachedOpenCodeConfig: Record<string, any> | null = null;
 let cachedOpenCodeConfigFingerprint: string | null = null;
 
-function readJson(path) {
+function readJson(path: string): Record<string, any> {
   if (!existsSync(path)) return {};
   try {
     return JSON.parse(readFileSync(path, "utf8"));
@@ -52,7 +53,7 @@ function readOpenCodeConfig(force = false) {
   return cachedOpenCodeConfig;
 }
 
-function backupAndWriteJson(path, data) {
+function backupAndWriteJson(path: string, data: Record<string, any>) {
   const dir = dirname(path);
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   if (existsSync(path)) {
@@ -73,7 +74,7 @@ function backupAndWriteJson(path, data) {
   }
 }
 
-function getProviderMeta(providerKey) {
+function getProviderMeta(providerKey: string) {
   const meta = PROVIDERS_META[providerKey];
   if (!meta) throw new Error(`Unknown provider "${providerKey}"`);
   return meta;
@@ -155,11 +156,11 @@ export function installOpenCode(installer: { command: string }) {
 
 // ─── Provider config blocks ───────────────────────────────────────────────────
 
-function getBaseUrl(meta) {
+function getBaseUrl(meta: { chatUrl: string }) {
   return meta.chatUrl.replace("/chat/completions", "");
 }
 
-function openCodeProviderBlock(providerKey, apiKey) {
+function openCodeProviderBlock(providerKey: string, apiKey: string | null) {
   const meta = getProviderMeta(providerKey);
   return {
     npm: "@ai-sdk/openai-compatible",
@@ -182,7 +183,7 @@ const OPENCODE_PROVIDER_FALLBACKS: Record<
   },
 };
 
-function assertOpenCodeCompatible(model) {
+function assertOpenCodeCompatible(model: Model) {
   if (model?.opencodeSupported === false) {
     throw new Error(
       `Model "${model.id}" is not marked as OpenCode-supported. Pick another model or refresh model metadata.`,
@@ -201,10 +202,10 @@ function modelTail(id: string): string {
 }
 
 function findFallbackModel(
-  allModels: any[],
+  allModels: Model[],
   providerKey: string,
   modelId: string,
-): any | null {
+): Model | null {
   if (!Array.isArray(allModels) || !allModels.length) return null;
   return (
     allModels.find(
@@ -225,7 +226,12 @@ function findFallbackModel(
  * Merge frouter provider block into OpenCode config and set active model.
  * Preserves all existing keys (other providers, plugins, etc.).
  */
-export function writeOpenCode(model, providerKey, apiKey = null, options = {}) {
+export function writeOpenCode(
+  model: Model,
+  providerKey: string,
+  apiKey: string | null = null,
+  options: { persistApiKey?: boolean } = {},
+) {
   assertOpenCodeCompatible(model);
   const persistedApiKey = resolvePersistedApiKey(providerKey, apiKey, options);
   const currentCfg = readOpenCodeConfig();
@@ -233,7 +239,7 @@ export function writeOpenCode(model, providerKey, apiKey = null, options = {}) {
     ...currentCfg,
     provider: {
       ...(currentCfg.provider ?? {}),
-      [providerKey]: openCodeProviderBlock(providerKey, persistedApiKey),
+      [providerKey]: openCodeProviderBlock(providerKey, persistedApiKey ?? null),
     },
     model: `${providerKey}/${model.id}`,
   };
@@ -253,7 +259,11 @@ export function writeOpenCode(model, providerKey, apiKey = null, options = {}) {
  * Always respects the user's explicit provider choice — if the user selected
  * a model from NIM (or any provider), that exact provider/model is used.
  */
-export function resolveOpenCodeSelection(model, providerKey, _allModels = []) {
+export function resolveOpenCodeSelection(
+  model: Model,
+  providerKey: string,
+  _allModels: Model[] = [],
+) {
   const fallbackRule =
     OPENCODE_PROVIDER_FALLBACKS[`${providerKey}:${model?.id}`];
   if (!fallbackRule) return { model, providerKey, fallback: false };
@@ -291,7 +301,12 @@ export function resolveOpenCodeSelection(model, providerKey, _allModels = []) {
  *   - agents.defaults.model.primary
  *   - agents.defaults.models allowlist entry (required or OpenClaw rejects it)
  */
-export function writeOpenClaw(model, providerKey, apiKey = null, options = {}) {
+export function writeOpenClaw(
+  model: Model,
+  providerKey: string,
+  apiKey: string | null = null,
+  options: { persistApiKey?: boolean } = {},
+) {
   const persistedApiKey = resolvePersistedApiKey(providerKey, apiKey, options);
   const meta = getProviderMeta(providerKey);
   const cfg = readJson(OPENCLAW_PATH);

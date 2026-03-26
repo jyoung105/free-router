@@ -11,6 +11,7 @@ import {
   PROVIDERS_META,
   validateProviderApiKey,
   openBrowser,
+  type FrouterConfig,
 } from "../lib/config.js";
 import { getAllModels } from "../lib/models.js";
 import {
@@ -53,6 +54,7 @@ import {
   WHITE,
   ORANGE,
   BG_SEL,
+  type Model,
 } from "../lib/utils.js";
 import { spawn, spawnSync } from "node:child_process";
 import { realpathSync } from "node:fs";
@@ -70,7 +72,7 @@ const PKG_VERSION: string = createRequire(import.meta.url)(
 ).version;
 
 // ─── ANSI shortcuts ────────────────────────────────────────────────────────────
-const w = (s) => process.stdout.write(String(s));
+const w = (s: string) => process.stdout.write(String(s));
 const CLEAR = "\x1b[2J\x1b[H";
 const CURSOR_HOME = "\x1b[H";
 const HIDEC = "\x1b[?25l";
@@ -130,9 +132,9 @@ if (HELP) {
 }
 
 // ─── State ─────────────────────────────────────────────────────────────────────
-let config = null;
-let models = [];
-let filtered = [];
+let config: FrouterConfig = { apiKeys: {}, providers: {}, ui: { scrollSortPauseMs: 1500 } };
+let models: Model[] = [];
+let filtered: Model[] = [];
 let cursor = 0;
 let scrollOff = 0;
 let sortCol = "priority";
@@ -144,13 +146,13 @@ let tierFilter = "All";
 let pingMs = 2000;
 let screen = "main"; // 'main' | 'settings' | 'target' | 'help'
 let sCursor = 0;
-let selModel = null;
+let selModel: Model | null = null;
 let sEditing = false;
 let sKeyBuf = "";
-let sTestRes = {};
+let sTestRes: Record<string, string> = {};
 let sNotice = "";
 let sAutoOpenedPk = "";
-let pingRef = null;
+let pingRef: { running: boolean; timer: ReturnType<typeof setTimeout> | null } | null = null;
 let userNavigated = false; // true once user actively moves cursor
 let autoSortPauseUntil = 0;
 const DEFAULT_USER_SCROLL_SORT_PAUSE_MS = 1500;
@@ -237,44 +239,44 @@ const SORT_COLS = [
   { key: "9", col: "intel", label: "AA" },
 ];
 
-function sortArrow(colName) {
+function sortArrow(colName: string) {
   if (sortCol !== colName) return "";
   return sortAsc ? "▲" : "▼";
 }
 
-function colHdr(label, colName, width, rightAlign = false) {
+function colHdr(label: string, colName: string, width: number, rightAlign = false) {
   const arrow = sortArrow(colName);
   const text = arrow ? `${label}${arrow}` : label;
   return rightAlign ? text.padStart(width) : text.padEnd(width);
 }
 
 // ─── Render helpers ────────────────────────────────────────────────────────────
-function fmtCtx(n) {
+function fmtCtx(n: number) {
   if (!n) return "  —  ";
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`.padStart(5);
   return `${Math.round(n / 1000)}k`.padStart(5);
 }
 
-function fmtMs(ms) {
+function fmtMs(ms: number | null) {
   if (ms === Infinity || ms == null) return "   — ";
   return `${Math.round(ms)}ms`.padStart(6);
 }
 
-function fmtUp(pct, hasPings) {
+function fmtUp(pct: number, hasPings: boolean) {
   if (!hasPings) return "  — ";
   return `${pct}%`.padStart(4);
 }
 
-function fmtLatency(ms) {
+function fmtLatency(ms: number | null) {
   if (ms != null) return latColor(ms) + fmtMs(ms) + R;
   return `${D}${fmtMs(null)}${R}`;
 }
 
-function fullWidthBar(content, style = INVERT, lastLine = false) {
+function fullWidthBar(content: string, style = INVERT, lastLine = false) {
   return `${style}${fullWidthLine(content, lastLine)}${R}`;
 }
 
-function fullWidthLine(content, lastLine = false) {
+function fullWidthLine(content: string, lastLine = false) {
   const c = cols();
   const guard = lastLine ? Math.max(1, WRAP_GUARD_COLS) : WRAP_GUARD_COLS;
   const maxW = Math.max(0, c - guard);
@@ -306,7 +308,7 @@ function startupPixelTitleLines() {
   });
 }
 
-function statusDot(model) {
+function statusDot(model: Model) {
   switch (model.status) {
     case "up":
       return `${GREEN}*${R}`;
@@ -447,7 +449,7 @@ function renderMain() {
       const avg = getAvg(m);
       const avgStr = fmtLatency(avg !== Infinity ? avg : null);
       const last = m.pings.at(-1);
-      const latMs = Number.isFinite(last?.ms) ? last.ms : null;
+      const latMs = Number.isFinite(last?.ms) ? (last?.ms ?? null) : null;
       const latStr = fmtLatency(latMs);
       const up = getUptime(m);
       const upStr = uptimeColor(up) + fmtUp(up, m.pings.length > 0) + R;
@@ -523,7 +525,7 @@ function renderHelp() {
 }
 
 // ─── Settings screen ───────────────────────────────────────────────────────────
-function maskKey(key) {
+function maskKey(key: string) {
   const masked = "•".repeat(Math.min(16, Math.max(4, key.length - 8)));
   return `${D}${key.slice(0, 4)}${masked}${key.slice(-4)}${R}`;
 }
@@ -639,11 +641,11 @@ function maxCursorIndex() {
   return Math.max(0, filtered.length - 1);
 }
 
-function clampCursor(next) {
+function clampCursor(next: number) {
   return Math.max(0, Math.min(maxCursorIndex(), next));
 }
 
-function resolveUserScrollSortPauseMs(cfg: any): number {
+function resolveUserScrollSortPauseMs(cfg: FrouterConfig): number {
   // Env overrides config so users can tune behavior per terminal/session.
   const raw =
     process.env.FROUTER_SCROLL_SORT_PAUSE_MS != null
@@ -724,6 +726,12 @@ function enterTargetPickerFromSelection() {
 
 async function launchOpenCodeDirect() {
   prepareForInkSubApp();
+
+  if (!selModel) {
+    restoreAfterInkSubApp("main");
+    restartLoop();
+    return;
+  }
 
   const {
     openCodeModel,
@@ -807,7 +815,7 @@ async function launchOpenCodeDirect() {
   }, 1400);
 }
 
-function resolveOpenCodeApplySelection(selectedModel) {
+function resolveOpenCodeApplySelection(selectedModel: Model) {
   const pk = selectedModel.providerKey;
   const resolved = resolveOpenCodeSelection(selectedModel, pk, models);
   const apiKey = getApiKey(config, resolved.providerKey);
@@ -824,7 +832,7 @@ function resolveOpenCodeApplySelection(selectedModel) {
   };
 }
 
-function getOpenCodeAuthHint(providerKey, apiKey, { launch = false } = {}) {
+function getOpenCodeAuthHint(providerKey: string, apiKey: string | null, { launch = false }: { launch?: boolean } = {}) {
   const envVar = PROVIDERS_META[providerKey]?.envVar;
   if (!envVar || ALLOW_PLAINTEXT_KEY_EXPORT) return "";
   if (!apiKey) {
@@ -835,7 +843,7 @@ function getOpenCodeAuthHint(providerKey, apiKey, { launch = false } = {}) {
   return `${YELLOW} ! OpenCode auth uses ${envVar}. Export it before launching opencode outside frouter.${R}`;
 }
 
-function buildOpenCodeLaunchEnv(providerKey, apiKey) {
+function buildOpenCodeLaunchEnv(providerKey: string, apiKey: string | null) {
   const launchEnv = { ...process.env };
   const envVar = PROVIDERS_META[providerKey]?.envVar;
   if (apiKey && envVar) {
@@ -935,9 +943,9 @@ function quickApplySelectionToTargets() {
         `${YELLOW} ! opencode CLI is not installed. Install it to use this config.${R}\n`,
       );
     }
-  } catch (err) {
+  } catch (err: unknown) {
     ok = false;
-    w(`\n${RED} ✗ OpenCode write failed: ${err.message}${R}\n`);
+    w(`\n${RED} ✗ OpenCode write failed: ${(err as Error).message}${R}\n`);
   }
 
   setTimeout(
@@ -996,7 +1004,7 @@ function maybeAutoOpenSettingsSignup(providerKey: string) {
   sNotice = `${D}Opened ${meta.name} key page in browser${R}`;
 }
 
-function handleMain(ch) {
+function handleMain(ch: string) {
   // Search mode: intercept all input
   if (searchMode) {
     let needsRefilter = false;
@@ -1094,7 +1102,7 @@ function handleMain(ch) {
   throttledRender();
 }
 
-function toggleSort(col) {
+function toggleSort(col: string) {
   if (sortCol === col) sortAsc = !sortAsc;
   else {
     sortCol = col;
@@ -1103,7 +1111,7 @@ function toggleSort(col) {
   applyFilters();
 }
 
-function handleSettings(ch) {
+function handleSettings(ch: string) {
   const pks = Object.keys(PROVIDERS_META);
   const currentPk = pks[sCursor];
   const currentMeta = PROVIDERS_META[currentPk];
@@ -1121,7 +1129,7 @@ function handleSettings(ch) {
           renderWithAuthority("settings-ui");
           return;
         }
-        config.apiKeys[currentPk] = checked.key;
+        config.apiKeys[currentPk] = checked.key!;
         sNotice = `${GREEN}Saved ${currentMeta.name} key${R}`;
       } else {
         delete config.apiKeys[currentPk];
@@ -1155,7 +1163,7 @@ function handleSettings(ch) {
     maybeAutoOpenSettingsSignup(pks[sCursor]);
   } else if (ch === " ") {
     config.providers ??= {};
-    config.providers[currentPk] ??= {};
+    config.providers[currentPk] ??= { enabled: true };
     config.providers[currentPk].enabled = !(
       config.providers[currentPk].enabled !== false
     );
@@ -1190,11 +1198,11 @@ function handleSettings(ch) {
 // ─── Raw input dispatcher ──────────────────────────────────────────────────────
 // Buffer escape sequences: if \x1b arrives alone, wait 50ms to see if [ follows.
 let escBuf = "";
-let escTimer = null;
+let escTimer: ReturnType<typeof setTimeout> | null = null;
 // Throttled rendering: cap at ~30fps to prevent terminal overwhelm during rapid input.
 // Ensures smooth scrolling instead of freeze-then-jump when holding arrow keys.
 let _lastRenderTime = 0;
-let _renderTimer = null;
+let _renderTimer: ReturnType<typeof setTimeout> | null = null;
 const RENDER_INTERVAL_MS = 33; // ~30fps
 
 function throttledRender() {
@@ -1254,7 +1262,7 @@ function flushEsc() {
   dispatch(buf);
 }
 
-function onData(raw) {
+function onData(raw: Buffer | string) {
   const ch = String(raw);
   if (ch.length > 1) {
     if (escTimer) {
@@ -1287,7 +1295,7 @@ function onData(raw) {
       if (escBuf.length === 3 && escBuf[2] >= "0" && escBuf[2] <= "9") {
         return; // wait for one more char
       }
-      clearTimeout(escTimer);
+      if (escTimer) clearTimeout(escTimer);
       const buf = escBuf;
       escBuf = "";
       escTimer = null;
@@ -1298,7 +1306,7 @@ function onData(raw) {
   dispatch(ch);
 }
 
-function dispatch(ch) {
+function dispatch(ch: string) {
   if (ch === "\x03") {
     cleanup();
     process.exit(0);
@@ -1329,7 +1337,7 @@ const PING_STATE_KEYS = [
   "_staleCommitDrops",
 ];
 
-function modelKey(m) {
+function modelKey(m: Model) {
   return `${m.providerKey}|${m.id}`;
 }
 
@@ -1339,8 +1347,8 @@ async function refreshModels() {
   models = fresh.map((m) => {
     const existing = byKey.get(modelKey(m));
     if (!existing) return m;
-    const preserved = {};
-    for (const k of PING_STATE_KEYS) preserved[k] = existing[k];
+    const preserved: Partial<Model> = {};
+    for (const k of PING_STATE_KEYS) (preserved as Record<string, unknown>)[k] = (existing as Record<string, unknown>)[k];
     return { ...m, ...preserved };
   });
   applyFilters();
