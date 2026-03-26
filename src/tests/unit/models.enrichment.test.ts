@@ -210,7 +210,7 @@ test("hardcoded NIM list includes key models from each tier", async () => {
     const ids = new Set(models.map((m) => m.id));
 
     // S+ tier
-    assert.ok(ids.has("qwen/qwen3-235b-a22b"), "Missing Qwen3 235B");
+    assert.ok(ids.has("qwen/qwen3-coder-480b-a35b-instruct"), "Missing Qwen3 Coder 480B");
     // S tier
     assert.ok(ids.has("deepseek-ai/deepseek-v3.1"), "Missing DeepSeek V3.1");
     // A tier

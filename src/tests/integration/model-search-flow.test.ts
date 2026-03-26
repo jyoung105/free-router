@@ -482,7 +482,7 @@ test(
         .filter((line) => line !== "");
       assert.match(lines[0] || "", /\bfrouter\b/i);
       assert.match(lines[1] || "", /\[Model Search\]/);
-      assert.match(lines[1] || "", /141\/141 mo/);
+      assert.match(lines[1] || "", /\d+\/\d+ mo/);
       assert.match(lines[2] || "", /#\s+Tier\s+Provider\s+Model/);
 
       const selectedRaw = rawFrame

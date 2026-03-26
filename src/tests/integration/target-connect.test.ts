@@ -192,7 +192,7 @@ exit 0
           OPENROUTER_API_KEY: "",
         },
         inputChunks: [
-          { delayMs: 900, data: "\x1b[B".repeat(9) }, // select stepfun-ai/step-3.5-flash
+          { delayMs: 900, data: "\x1b[B".repeat(10) }, // select stepfun-ai/step-3.5-flash (index 10)
           { delayMs: 1500, data: "\r" }, // model -> target screen
           { delayMs: 3500, data: "\r" }, // select target
           { delayMs: 4500, data: "\r" }, // select "Save + Launch"
