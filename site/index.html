@@ -3,10 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/x-icon" href="/logo/favicon.ico" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/logo/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="/logo/favicon-16x16.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/logo/apple-touch-icon.png"
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/src/style.css" />
     <title>frouter | Free AI model router for coding tools</title>
     <meta name="description" content="Browse free AI coding models, compare benchmark signals, and route requests through the fastest free providers with frouter." />
@@ -35,15 +55,55 @@
           <div class="hero-install">
             <span class="hero-install-dollar">$</span>
             <span class="hero-install-cmd">npx frouter-cli</span>
-            <button class="copy-btn" data-cmd="npx frouter-cli" aria-label="Copy command">
-              <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <button
+              class="copy-btn"
+              data-cmd="npx frouter-cli"
+              aria-label="Copy command"
+            >
+              <svg
+                class="copy-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                <path
+                  d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                ></path>
+              </svg>
+              <svg
+                class="check-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                style="display: none"
+              >
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
             </button>
           </div>
 
           <div class="hero-actions">
-            <a href="https://github.com/jyoung105/frouter" target="_blank" rel="noopener" class="btn-primary">Start routing</a>
-            <a href="https://github.com/jyoung105/frouter#readme" target="_blank" rel="noopener" class="btn-secondary">Read documentation</a>
+            <a
+              href="https://github.com/jyoung105/frouter"
+              target="_blank"
+              rel="noopener"
+              class="btn-primary"
+              >Start routing</a
+            >
+            <a
+              href="https://github.com/jyoung105/frouter#readme"
+              target="_blank"
+              rel="noopener"
+              class="btn-secondary"
+              >Read documentation</a
+            >
           </div>
         </div>
 
@@ -69,14 +129,17 @@
             <div class="body">
               <div class="terminal-header" id="terminal-header">
                 <div class="line prompt">
-                  <span class="ps1">$</span> <span id="typing-cmd"></span><span class="typing-cursor" id="typing-cursor">&#9612;</span>
+                  <span class="ps1">$</span> <span id="typing-cmd"></span
+                  ><span class="typing-cursor" id="typing-cursor">&#9612;</span>
                 </div>
-                <pre class="ascii-art" id="ascii-art" aria-hidden="true">  ███████╗ ██████╗   ██████╗  ██╗   ██╗ ████████╗ ███████╗ ██████╗
+                <pre class="ascii-art" id="ascii-art" aria-hidden="true">
+  ███████╗ ██████╗   ██████╗  ██╗   ██╗ ████████╗ ███████╗ ██████╗
   ██╔════╝ ██╔══██╗ ██╔═══██╗ ██║   ██║ ╚══██╔══╝ ██╔════╝ ██╔══██╗
   █████╗   ██████╔╝ ██║   ██║ ██║   ██║    ██║    █████╗   ██████╔╝
   ██╔══╝   ██╔══██╗ ██║   ██║ ██║   ██║    ██║    ██╔══╝   ██╔══██╗
   ██║      ██║  ██║ ╚██████╔╝ ╚██████╔╝    ██║    ███████╗ ██║  ██║
-  ╚═╝      ╚═╝  ╚═╝  ╚═════╝   ╚═════╝     ╚═╝    ╚══════╝ ╚═╝  ╚═╝</pre>
+  ╚═╝      ╚═╝  ╚═╝  ╚═════╝   ╚═════╝     ╚═╝    ╚══════╝ ╚═╝  ╚═╝</pre
+                >
               </div>
 
               <div class="tab-content active" data-tab="install">
@@ -91,22 +154,114 @@
                 </div>
                 <div class="line output indent install-line">
                   <span class="install-cmd">npx frouter-cli</span>
-                  <button class="copy-btn" data-cmd="npx frouter-cli" aria-label="Copy command"><svg class="copy-icon" viewBox="0 0 256 256" fill="currentColor"><path d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z"></path></svg><svg class="check-icon" viewBox="0 0 256 256" fill="currentColor" style="display: none"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"></path></svg></button>
+                  <button
+                    class="copy-btn"
+                    data-cmd="npx frouter-cli"
+                    aria-label="Copy command"
+                  >
+                    <svg
+                      class="copy-icon"
+                      viewBox="0 0 256 256"
+                      fill="currentColor"
+                    >
+                      <path
+                        d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z"
+                      ></path></svg
+                    ><svg
+                      class="check-icon"
+                      viewBox="0 0 256 256"
+                      fill="currentColor"
+                      style="display: none"
+                    >
+                      <path
+                        d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"
+                      ></path>
+                    </svg>
+                  </button>
                 </div>
                 <div class="line output indent dim"># or</div>
                 <div class="line output indent install-line">
                   <span class="install-cmd">npm i -g frouter-cli</span>
-                  <button class="copy-btn" data-cmd="npm i -g frouter-cli" aria-label="Copy command"><svg class="copy-icon" viewBox="0 0 256 256" fill="currentColor"><path d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z"></path></svg><svg class="check-icon" viewBox="0 0 256 256" fill="currentColor" style="display: none"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"></path></svg></button>
+                  <button
+                    class="copy-btn"
+                    data-cmd="npm i -g frouter-cli"
+                    aria-label="Copy command"
+                  >
+                    <svg
+                      class="copy-icon"
+                      viewBox="0 0 256 256"
+                      fill="currentColor"
+                    >
+                      <path
+                        d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z"
+                      ></path></svg
+                    ><svg
+                      class="check-icon"
+                      viewBox="0 0 256 256"
+                      fill="currentColor"
+                      style="display: none"
+                    >
+                      <path
+                        d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"
+                      ></path>
+                    </svg>
+                  </button>
                 </div>
                 <div class="line output indent dim"># or</div>
                 <div class="line output indent install-line">
                   <span class="install-cmd">bunx frouter-cli</span>
-                  <button class="copy-btn" data-cmd="bunx frouter-cli" aria-label="Copy command"><svg class="copy-icon" viewBox="0 0 256 256" fill="currentColor"><path d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z"></path></svg><svg class="check-icon" viewBox="0 0 256 256" fill="currentColor" style="display: none"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"></path></svg></button>
+                  <button
+                    class="copy-btn"
+                    data-cmd="bunx frouter-cli"
+                    aria-label="Copy command"
+                  >
+                    <svg
+                      class="copy-icon"
+                      viewBox="0 0 256 256"
+                      fill="currentColor"
+                    >
+                      <path
+                        d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z"
+                      ></path></svg
+                    ><svg
+                      class="check-icon"
+                      viewBox="0 0 256 256"
+                      fill="currentColor"
+                      style="display: none"
+                    >
+                      <path
+                        d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"
+                      ></path>
+                    </svg>
+                  </button>
                 </div>
                 <div class="line output indent dim"># or</div>
                 <div class="line output indent install-line">
                   <span class="install-cmd">bun install -g frouter-cli</span>
-                  <button class="copy-btn" data-cmd="bun install -g frouter-cli" aria-label="Copy command"><svg class="copy-icon" viewBox="0 0 256 256" fill="currentColor"><path d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z"></path></svg><svg class="check-icon" viewBox="0 0 256 256" fill="currentColor" style="display: none"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"></path></svg></button>
+                  <button
+                    class="copy-btn"
+                    data-cmd="bun install -g frouter-cli"
+                    aria-label="Copy command"
+                  >
+                    <svg
+                      class="copy-icon"
+                      viewBox="0 0 256 256"
+                      fill="currentColor"
+                    >
+                      <path
+                        d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z"
+                      ></path></svg
+                    ><svg
+                      class="check-icon"
+                      viewBox="0 0 256 256"
+                      fill="currentColor"
+                      style="display: none"
+                    >
+                      <path
+                        d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"
+                      ></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
 
@@ -130,10 +285,22 @@
                   <span class="ps1">$</span> frouter --features
                 </div>
                 <div class="spacer"></div>
-                <div class="line output indent"><span class="star">&#10022;</span> Live latency pings (every 2s)</div>
-                <div class="line output indent"><span class="star">&#10022;</span> SWE-bench tier rankings (S+ → C)</div>
-                <div class="line output indent"><span class="star">&#10022;</span> One-key config for OpenCode / OpenClaw</div>
-                <div class="line output indent"><span class="star">&#10022;</span> --best flag for scripted usage</div>
+                <div class="line output indent">
+                  <span class="star">&#10022;</span> Live latency pings (every
+                  2s)
+                </div>
+                <div class="line output indent">
+                  <span class="star">&#10022;</span> SWE-bench tier rankings (S+
+                  → C)
+                </div>
+                <div class="line output indent">
+                  <span class="star">&#10022;</span> One-key config for OpenCode
+                  / OpenClaw
+                </div>
+                <div class="line output indent">
+                  <span class="star">&#10022;</span> --best flag for scripted
+                  usage
+                </div>
               </div>
 
               <div class="tab-content" data-tab="github">
@@ -142,14 +309,23 @@
                 </div>
                 <div class="spacer"></div>
                 <div class="line links">
-                  <a href="https://github.com/jyoung105/frouter" target="_blank" rel="noopener" class="github-cta">
+                  <a
+                    href="https://github.com/jyoung105/frouter"
+                    target="_blank"
+                    rel="noopener"
+                    class="github-cta"
+                  >
                     <span class="github-cta-icon" aria-hidden="true">
                       <svg viewBox="0 0 256 256" focusable="false">
-                        <path d="M208.31,75.68A59.78,59.78,0,0,0,202.93,28,8,8,0,0,0,196,24a59.75,59.75,0,0,0-48,24H124A59.75,59.75,0,0,0,76,24a8,8,0,0,0-6.93,4,59.78,59.78,0,0,0-5.38,47.68A58.14,58.14,0,0,0,56,104v8a56.06,56.06,0,0,0,48.44,55.47A39.8,39.8,0,0,0,96,192v8H72a24,24,0,0,1-24-24A40,40,0,0,0,8,136a8,8,0,0,0,0,16,24,24,0,0,1,24,24,40,40,0,0,0,40,40H96v16a8,8,0,0,0,16,0V192a24,24,0,0,1,48,0v40a8,8,0,0,0,16,0V192a39.8,39.8,0,0,0-8.42-24.53A56.06,56.06,0,0,0,216,112v-8A58.14,58.14,0,0,0,208.31,75.68ZM200,112a40,40,0,0,1-40,40H112a40,40,0,0,1-40-40v-8a41.74,41.74,0,0,1,6.9-22.48A8,8,0,0,0,80,73.55a43.81,43.81,0,0,1,.79-33.58,43.88,43.88,0,0,1,32.32,20.06A8,8,0,0,0,119.82,64h32.35a8,8,0,0,0,6.74-3.69,43.87,43.87,0,0,1,32.32-20.06A43.81,43.81,0,0,1,192,73.55a8,8,0,0,0,1.11,7.95A41.74,41.74,0,0,1,200,104Z"></path>
+                        <path
+                          d="M208.31,75.68A59.78,59.78,0,0,0,202.93,28,8,8,0,0,0,196,24a59.75,59.75,0,0,0-48,24H124A59.75,59.75,0,0,0,76,24a8,8,0,0,0-6.93,4,59.78,59.78,0,0,0-5.38,47.68A58.14,58.14,0,0,0,56,104v8a56.06,56.06,0,0,0,48.44,55.47A39.8,39.8,0,0,0,96,192v8H72a24,24,0,0,1-24-24A40,40,0,0,0,8,136a8,8,0,0,0,0,16,24,24,0,0,1,24,24,40,40,0,0,0,40,40H96v16a8,8,0,0,0,16,0V192a24,24,0,0,1,48,0v40a8,8,0,0,0,16,0V192a39.8,39.8,0,0,0-8.42-24.53A56.06,56.06,0,0,0,216,112v-8A58.14,58.14,0,0,0,208.31,75.68ZM200,112a40,40,0,0,1-40,40H112a40,40,0,0,1-40-40v-8a41.74,41.74,0,0,1,6.9-22.48A8,8,0,0,0,80,73.55a43.81,43.81,0,0,1,.79-33.58,43.88,43.88,0,0,1,32.32,20.06A8,8,0,0,0,119.82,64h32.35a8,8,0,0,0,6.74-3.69,43.87,43.87,0,0,1,32.32-20.06A43.81,43.81,0,0,1,192,73.55a8,8,0,0,0,1.11,7.95A41.74,41.74,0,0,1,200,104Z"
+                        ></path>
                       </svg>
                     </span>
                     <span class="github-cta-text">Give the star</span>
-                    <span class="github-cta-star" aria-hidden="true">&#10022;</span>
+                    <span class="github-cta-star" aria-hidden="true"
+                      >&#10022;</span
+                    >
                   </a>
                 </div>
               </div>
@@ -184,8 +360,16 @@
 
         <div class="search-bar">
           <span class="search-icon">/</span>
-          <input type="text" id="model-search" placeholder="Search models..." autocomplete="off" spellcheck="false" />
-          <span class="model-count dim" id="model-count">163/163</span>
+          <input
+            type="text"
+            id="model-search"
+            placeholder="Search models..."
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <span class="model-count dim" id="model-count"
+            >163/163</span
+          >
         </div>
 
         <div class="tier-filters" id="tier-filters">
@@ -214,7 +398,7 @@
               </tr>
             </thead>
             <tbody id="model-tbody">
-<tr data-model-row data-tier="S+" data-search="z-ai/glm5 glm 5 nim s+ 128k">
+              <tr data-model-row data-tier="S+" data-search="z-ai/glm5 glm 5 nim s+ 128k">
               <td class="td-tier tier-sp">S+</td>
               <td class="td-src">NIM</td>
               <td class="td-name"><a class="model-link" href="models/glm-5/">GLM 5</a></td>
@@ -1688,7 +1872,10 @@
           </table>
         </div>
 
-        <p class="crawl-note">Static model links ship in HTML for crawlers. Future slug redirects generated from manifest diffs: 0.</p>
+        <p class="crawl-note">
+          Static model links ship in HTML for crawlers. Future slug redirects
+          generated from manifest diffs: 0.
+        </p>
       </div>
     </main>
 
