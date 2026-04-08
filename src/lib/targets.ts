@@ -239,7 +239,10 @@ export function writeOpenCode(
     ...currentCfg,
     provider: {
       ...(currentCfg.provider ?? {}),
-      [providerKey]: openCodeProviderBlock(providerKey, persistedApiKey ?? null),
+      [providerKey]: openCodeProviderBlock(
+        providerKey,
+        persistedApiKey ?? null,
+      ),
     },
     model: `${providerKey}/${model.id}`,
   };

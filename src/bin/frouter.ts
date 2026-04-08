@@ -132,7 +132,11 @@ if (HELP) {
 }
 
 // ─── State ─────────────────────────────────────────────────────────────────────
-let config: FrouterConfig = { apiKeys: {}, providers: {}, ui: { scrollSortPauseMs: 1500 } };
+let config: FrouterConfig = {
+  apiKeys: {},
+  providers: {},
+  ui: { scrollSortPauseMs: 1500 },
+};
 let models: Model[] = [];
 let filtered: Model[] = [];
 let cursor = 0;
@@ -152,7 +156,10 @@ let sKeyBuf = "";
 let sTestRes: Record<string, string> = {};
 let sNotice = "";
 let sAutoOpenedPk = "";
-let pingRef: { running: boolean; timer: ReturnType<typeof setTimeout> | null } | null = null;
+let pingRef: {
+  running: boolean;
+  timer: ReturnType<typeof setTimeout> | null;
+} | null = null;
 let userNavigated = false; // true once user actively moves cursor
 let autoSortPauseUntil = 0;
 const DEFAULT_USER_SCROLL_SORT_PAUSE_MS = 1500;
@@ -244,7 +251,12 @@ function sortArrow(colName: string) {
   return sortAsc ? "▲" : "▼";
 }
 
-function colHdr(label: string, colName: string, width: number, rightAlign = false) {
+function colHdr(
+  label: string,
+  colName: string,
+  width: number,
+  rightAlign = false,
+) {
   const arrow = sortArrow(colName);
   const text = arrow ? `${label}${arrow}` : label;
   return rightAlign ? text.padStart(width) : text.padEnd(width);
@@ -728,11 +740,8 @@ async function launchOpenCodeDirect() {
     return;
   }
 
-  const {
-    openCodeModel,
-    openCodePk,
-    openCodeApiKey,
-  } = resolveOpenCodeApplySelection(selModel);
+  const { openCodeModel, openCodePk, openCodeApiKey } =
+    resolveOpenCodeApplySelection(selModel);
 
   let launch = true;
 
@@ -1284,7 +1293,10 @@ async function refreshModels() {
     const existing = byKey.get(modelKey(m));
     if (!existing) return m;
     const preserved: Partial<Model> = {};
-    for (const k of PING_STATE_KEYS) (preserved as Record<string, unknown>)[k] = (existing as Record<string, unknown>)[k];
+    for (const k of PING_STATE_KEYS)
+      (preserved as Record<string, unknown>)[k] = (
+        existing as Record<string, unknown>
+      )[k];
     return { ...m, ...preserved };
   });
   applyFilters();
