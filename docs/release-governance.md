@@ -83,8 +83,6 @@ Apply to **both `main` and `dev`**:
 - Dismiss stale approvals on new commits
 - Require conversation resolution
 - Require status checks to pass before merge:
-  - `CI / Test (Node 20 on ubuntu-latest)`
-  - `CI / Test (Node 20 on macos-latest)`
   - `CI / Test (Node 22 on ubuntu-latest)`
   - `CI / Test (Node 22 on macos-latest)`
   - `CI / Site build (Node 22 on ubuntu-latest)`
