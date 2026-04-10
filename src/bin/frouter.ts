@@ -401,6 +401,22 @@ function renderMain() {
     tierFilter !== "All" ? `${YELLOW}tier:${tierFilter}${R}  ` : "";
   const stats = `${D}${filtered.length}/${models.length} models  ${pingMs / 1000}s${R}`;
 
+  // ── Loading splash — skip all chrome until data is ready ──────────────────
+  const isLoading = filtered.length === 0 && models.length === 0;
+  if (isLoading) {
+    const splashLines = [
+      ...startupPixelTitleLines(),
+      `${D}  FROUTER · Free Model Router${R}`,
+      `${D}  Loading models…${R}`,
+    ];
+    const topPad = Math.max(0, Math.floor((r - splashLines.length) / 3) - 5);
+    let out = (FORCE_FRAME_CLEAR ? CLEAR : CURSOR_HOME) + HIDEC + "\x1b[J";
+    for (let i = 0; i < topPad; i++) out += "\n";
+    for (const line of splashLines) out += truncAnsi(line, c) + "\n";
+    w(out);
+    return;
+  }
+
   let out = (FORCE_FRAME_CLEAR ? CLEAR : CURSOR_HOME) + HIDEC;
 
   // Header
@@ -421,17 +437,7 @@ function renderMain() {
     w(out);
     return;
   }
-  const isLoading = filtered.length === 0 && models.length === 0;
-  if (isLoading) {
-    const loadingLines = [
-      ...startupPixelTitleLines(),
-      `${D}  FROUTER · Free Model Router${R}`,
-      `${D}  Loading models…${R}`,
-    ];
-    for (let i = 0; i < tr; i++) {
-      out += truncAnsi(loadingLines[i] ?? "", c) + "\n";
-    }
-  } else {
+  {
     const showSearchPixelTitle =
       searchMode &&
       !searchTabScrolled &&
