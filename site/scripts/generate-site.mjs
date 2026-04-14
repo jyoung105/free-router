@@ -26,7 +26,7 @@ const GENERATED_STATE_DIR = path.join(siteRoot, '.generated');
 const DATA_PATH = path.join(repoRoot, 'data', 'model-rankings.json');
 const MANIFEST_PATH = path.join(repoRoot, 'data', 'slug-manifest.json');
 
-const HOME_TITLE = 'frouter | Free AI model router for coding tools';
+const HOME_TITLE = 'frouter | Free AI model router for agents';
 const HOME_DESCRIPTION =
   'Browse free AI coding models, compare benchmark signals, and route requests through the fastest free providers with frouter.';
 
@@ -205,7 +205,7 @@ function buildModelPage(record, context, homeUrl) {
     <link rel="icon" type="image/x-icon" href="../../favicon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/style.css" />
     ${headMarkup}
   </head>
@@ -415,8 +415,8 @@ async function writeHomepage(template, records, context, redirectCount) {
 
   const html = template
     .replace('__HEAD_META__', headMarkup)
-    .replace('__TAGLINE__', '&gt; Free model router for AI coding tools')
-    .replace('__SUBTITLE__', '&gt; Compare providers, benchmark latency, start building.')
+    .replace('__TAGLINE__', '&gt; Free model router for AI agents')
+    .replace('__SUBTITLE__', '&gt; Route through the fastest free models. Start building in seconds.')
     .replaceAll('__MODEL_COUNT__', String(records.length))
     .replace('__MODEL_ROWS__', records.map(buildModelRow).join('\n'))
     .replace('__MODEL_REDIRECT_COUNT__', String(redirectCount));
