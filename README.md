@@ -138,17 +138,17 @@ Search bar provider badges:
 
 **Actions**
 
-| Key            | Action                                                            |
-| -------------- | ----------------------------------------------------------------- |
-| `Enter`        | Save config + open current model in `opencode`                    |
-| `/`            | Search / filter models (Enter in search = open `opencode`)        |
-| `A`            | Quick API key add/change (opens key editor in Settings)           |
-| `R`            | Edit API key for likely expired/missing provider                  |
-| `T`            | Cycle tier filter: All → S+ → S → A+ → …                          |
-| `P`            | Settings screen (edit keys, toggle providers, test)               |
-| `W` / `X`      | Faster / slower ping interval                                     |
-| `?`            | Help overlay                                                      |
-| `q` / `Ctrl+C` | Quit                                                              |
+| Key            | Action                                                     |
+| -------------- | ---------------------------------------------------------- |
+| `Enter`        | Save config + open current model in `opencode`             |
+| `/`            | Search / filter models (Enter in search = open `opencode`) |
+| `A`            | Quick API key add/change (opens key editor in Settings)    |
+| `R`            | Edit API key for likely expired/missing provider           |
+| `T`            | Cycle tier filter: All → S+ → S → A+ → …                   |
+| `P`            | Settings screen (edit keys, toggle providers, test)        |
+| `W` / `X`      | Faster / slower ping interval                              |
+| `?`            | Help overlay                                               |
+| `q` / `Ctrl+C` | Quit                                                       |
 
 **Sort** (press to sort, press again to reverse)
 

@@ -107,7 +107,10 @@ export function saveConfig(config: FrouterConfig): void {
 /**
  * Priority: env var > config file > null (keyless ping)
  */
-export function getApiKey(config: FrouterConfig, providerKey: string): string | null {
+export function getApiKey(
+  config: FrouterConfig,
+  providerKey: string,
+): string | null {
   const meta = PROVIDERS_META[providerKey];
   if (!meta) return null;
   return process.env[meta.envVar] || config?.apiKeys?.[providerKey] || null;
