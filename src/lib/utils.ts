@@ -202,7 +202,9 @@ export function getAvg(model: Model): number {
     if (!metrics.okCount) return Infinity;
     return metrics.sumOkMs / metrics.okCount;
   }
-  const ok = model.pings.filter((p: PingEntry) => p.code === "200" || p.code === "401");
+  const ok = model.pings.filter(
+    (p: PingEntry) => p.code === "200" || p.code === "401",
+  );
   if (!ok.length) return Infinity;
   return ok.reduce((s: number, p: PingEntry) => s + p.ms, 0) / ok.length;
 }
