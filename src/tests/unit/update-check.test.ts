@@ -72,7 +72,7 @@ test("update check: skips silently when version matches", async () => {
       cwd: ROOT_DIR,
       env: {
         HOME: home,
-        FROUTER_REGISTRY_URL: `${server.baseUrl}/frouter-cli/latest`,
+        FREE_ROUTER_REGISTRY_URL: `${server.baseUrl}/free-router/latest`,
       },
       timeoutMs: 7_000,
     });
@@ -97,7 +97,7 @@ test("update check: skips silently when registry version is older", async () => 
       cwd: ROOT_DIR,
       env: {
         HOME: home,
-        FROUTER_REGISTRY_URL: `${server.baseUrl}/frouter-cli/latest`,
+        FREE_ROUTER_REGISTRY_URL: `${server.baseUrl}/free-router/latest`,
       },
       timeoutMs: 7_000,
     });
@@ -122,7 +122,7 @@ test("update check: shows update available in non-TTY and auto-skips", async () 
       cwd: ROOT_DIR,
       env: {
         HOME: home,
-        FROUTER_REGISTRY_URL: `${server.baseUrl}/frouter-cli/latest`,
+        FREE_ROUTER_REGISTRY_URL: `${server.baseUrl}/free-router/latest`,
       },
       timeoutMs: 7_000,
     });
@@ -157,7 +157,7 @@ test(
         cwd: ROOT_DIR,
         env: {
           HOME: home,
-          FROUTER_REGISTRY_URL: `${server.baseUrl}/frouter-cli/latest`,
+          FREE_ROUTER_REGISTRY_URL: `${server.baseUrl}/free-router/latest`,
         },
         // Send 'n' to decline update, then 'q' to quit TUI
         inputChunks: [
@@ -208,8 +208,8 @@ exit 0
         env: {
           HOME: home,
           PATH: `${fakeBin}${fakeBrowser ? `:${fakeBrowser.binDir}` : ""}:${process.env.PATH || ""}`,
-          FROUTER_REGISTRY_URL: `${server.baseUrl}/frouter-cli/latest`,
-          FROUTER_NO_FETCH: "1",
+          FREE_ROUTER_REGISTRY_URL: `${server.baseUrl}/free-router/latest`,
+          FREE_ROUTER_NO_FETCH: "1",
           npm_config_user_agent: "",
           npm_execpath: "",
         },
@@ -228,20 +228,20 @@ exit 0
       assert.equal(result.timedOut, false);
       assert.match(result.stdout, /Update available/);
       assert.match(result.stdout, /Update now\? \(Y\/n, default: n\):/);
-      assert.match(result.stdout, /Updating frouter-cli/);
+      assert.match(result.stdout, /Updating free-router/);
       assert.match(result.stdout, /Support for github star: \[Y\/n\]/);
       assert.match(result.stdout, /\d{1,3}%/);
       assert.match(result.stdout, /Updated to 99\.0\.0/);
-      assert.match(result.stdout, /Restarting frouter now/);
+      assert.match(result.stdout, /Restarting free-router now/);
       assert.equal((result.stdout.match(/Update available/g) || []).length, 1);
       assert.equal(
         readFileSync(marker, "utf8").trim(),
-        "install -g frouter-cli",
+        "install -g free-router",
       );
       if (fakeBrowser) {
         assert.match(
           readFileSync(fakeBrowser.logPath, "utf8"),
-          /https:\/\/github\.com\/jyoung105\/frouter/,
+          /https:\/\/github\.com\/jyoung105\/free-router/,
         );
       }
       assert.match(stripAnsi(result.stdout), /\/_/);
@@ -283,8 +283,8 @@ exit 0
         env: {
           HOME: home,
           PATH: `${fakeBin}${fakeBrowser ? `:${fakeBrowser.binDir}` : ""}:${process.env.PATH || ""}`,
-          FROUTER_REGISTRY_URL: `${server.baseUrl}/frouter-cli/latest`,
-          FROUTER_NO_FETCH: "1",
+          FREE_ROUTER_REGISTRY_URL: `${server.baseUrl}/free-router/latest`,
+          FREE_ROUTER_NO_FETCH: "1",
           npm_config_user_agent: "",
           npm_execpath: "",
         },
@@ -301,7 +301,7 @@ exit 0
       assert.match(result.stdout, /Updated to 99\.0\.0/);
       assert.equal(
         readFileSync(marker, "utf8").trim(),
-        "install -g frouter-cli",
+        "install -g free-router",
       );
       if (fakeBrowser) {
         const browserLog = existsSync(fakeBrowser.logPath)
@@ -309,7 +309,7 @@ exit 0
           : "";
         assert.doesNotMatch(
           browserLog,
-          /https:\/\/github\.com\/jyoung105\/frouter/,
+          /https:\/\/github\.com\/jyoung105\/free-router/,
         );
       }
       assert.doesNotMatch(stripAnsi(result.stdout), /\/_/);
@@ -328,7 +328,7 @@ test("update check: silently continues when registry is unreachable", async () =
       cwd: ROOT_DIR,
       env: {
         HOME: home,
-        FROUTER_REGISTRY_URL: "http://127.0.0.1:1/frouter-cli/latest",
+        FREE_ROUTER_REGISTRY_URL: "http://127.0.0.1:1/free-router/latest",
       },
       timeoutMs: 7_000,
     });
@@ -353,7 +353,7 @@ test("update check: silently continues when registry returns invalid JSON", asyn
       cwd: ROOT_DIR,
       env: {
         HOME: home,
-        FROUTER_REGISTRY_URL: `${server.baseUrl}/frouter-cli/latest`,
+        FREE_ROUTER_REGISTRY_URL: `${server.baseUrl}/free-router/latest`,
       },
       timeoutMs: 7_000,
     });
@@ -396,14 +396,14 @@ exit 0
         env: {
           HOME: home,
           PATH: `${fakeBin}:${process.env.PATH || ""}`,
-          FROUTER_REGISTRY_URL: `${server.baseUrl}/frouter-cli/latest`,
-          FROUTER_NO_FETCH: "1",
+          FREE_ROUTER_REGISTRY_URL: `${server.baseUrl}/free-router/latest`,
+          FREE_ROUTER_NO_FETCH: "1",
           npm_config_prefix: "/tmp/bogus-prefix",
           npm_config_global_prefix: "/tmp/bogus-global",
           npm_config_user_agent: "npm/10.0.0 node/v20.0.0",
           npm_execpath: "/usr/lib/node_modules/npm/bin/npm-cli.js",
           npm_lifecycle_event: "postinstall",
-          FROUTER_KEEP_THIS: "yes",
+          FREE_ROUTER_KEEP_THIS: "yes",
         },
         inputChunks: [
           { delayMs: 2000, data: "y\r" },
@@ -425,7 +425,7 @@ exit 0
       assert.doesNotMatch(childEnv, /npm_execpath/i);
       assert.doesNotMatch(childEnv, /npm_lifecycle_event/i);
       // Non-npm vars must still be present
-      assert.match(childEnv, /FROUTER_KEEP_THIS=yes/);
+      assert.match(childEnv, /FREE_ROUTER_KEEP_THIS=yes/);
     } finally {
       cleanupTempHome(home);
       await server.close();
@@ -464,7 +464,7 @@ esac
         env: {
           HOME: home,
           PATH: `${fakeBin}:${process.env.PATH || ""}`,
-          FROUTER_REGISTRY_URL: `${server.baseUrl}/frouter-cli/latest`,
+          FREE_ROUTER_REGISTRY_URL: `${server.baseUrl}/free-router/latest`,
           npm_config_user_agent: "",
           npm_execpath: "",
         },
@@ -485,7 +485,7 @@ esac
   },
 );
 
-test("update check: FROUTER_SKIP_UPDATE_ONCE suppresses update check entirely", async () => {
+test("update check: FREE_ROUTER_SKIP_UPDATE_ONCE suppresses update check entirely", async () => {
   const server = await createHttpServer((_req, res) => {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ version: "99.0.0" }));
@@ -498,8 +498,8 @@ test("update check: FROUTER_SKIP_UPDATE_ONCE suppresses update check entirely", 
       cwd: ROOT_DIR,
       env: {
         HOME: home,
-        FROUTER_REGISTRY_URL: `${server.baseUrl}/frouter-cli/latest`,
-        FROUTER_SKIP_UPDATE_ONCE: "1",
+        FREE_ROUTER_REGISTRY_URL: `${server.baseUrl}/free-router/latest`,
+        FREE_ROUTER_SKIP_UPDATE_ONCE: "1",
       },
       timeoutMs: 7_000,
     });
@@ -543,7 +543,7 @@ case "$1" in
   install)
     echo "$@" > "$HOME/update-invoked.log"
     # Simulate global install by updating package.json version to ${NEXT_PKG_VERSION}
-    PKG="\${FROUTER_PKG_PATH}"
+    PKG="\${FREE_ROUTER_PKG_PATH}"
     if [ -n "$PKG" ]; then
       sed 's/"version": *"[^"]*"/"version": "${NEXT_PKG_VERSION}"/' "$PKG" > "$PKG.tmp" && mv "$PKG.tmp" "$PKG"
     fi
@@ -560,9 +560,9 @@ esac
         env: {
           HOME: home,
           PATH: `${fakeBin}${fakeBrowser ? `:${fakeBrowser.binDir}` : ""}:${process.env.PATH || ""}`,
-          FROUTER_REGISTRY_URL: `${server.baseUrl}/frouter-cli/latest`,
-          FROUTER_NO_FETCH: "1",
-          FROUTER_PKG_PATH: pkgPath,
+          FREE_ROUTER_REGISTRY_URL: `${server.baseUrl}/free-router/latest`,
+          FREE_ROUTER_NO_FETCH: "1",
+          FREE_ROUTER_PKG_PATH: pkgPath,
           npm_config_user_agent: "",
           npm_execpath: "",
         },
@@ -589,18 +589,18 @@ esac
         result.stdout,
         new RegExp(`Updated to ${NEXT_PKG_VERSION.replaceAll(".", "\\.")}`),
       );
-      assert.match(result.stdout, /Restarting frouter now/);
+      assert.match(result.stdout, /Restarting free-router now/);
       assert.match(stripAnsi(result.stdout), /\/_/);
 
       // Verify fake npm received correct install command
       assert.equal(
         readFileSync(marker, "utf8").trim(),
-        "install -g frouter-cli",
+        "install -g free-router",
       );
       if (fakeBrowser) {
         assert.match(
           readFileSync(fakeBrowser.logPath, "utf8"),
-          /https:\/\/github\.com\/jyoung105\/frouter/,
+          /https:\/\/github\.com\/jyoung105\/free-router/,
         );
       }
 
@@ -632,7 +632,7 @@ test("update check: --best mode does not prompt for updates", async () => {
       cwd: ROOT_DIR,
       env: {
         HOME: home,
-        FROUTER_REGISTRY_URL: `${server.baseUrl}/frouter-cli/latest`,
+        FREE_ROUTER_REGISTRY_URL: `${server.baseUrl}/free-router/latest`,
       },
       timeoutMs: 15_000,
     });
