@@ -6,7 +6,7 @@ function runTerminalHeaderAnimation() {
   const asciiArt = document.getElementById("ascii-art");
   if (!typingCmd || !typingCursor || !asciiArt) return;
 
-  const command = "npx frouter-cli";
+  const command = "npx free-router";
   let i = 0;
 
   const typeInterval = setInterval(() => {
