@@ -48,14 +48,14 @@ async function withNoFetchEnv(
   value: string | undefined,
   run: () => Promise<void>,
 ) {
-  const prev = process.env.FROUTER_NO_FETCH;
-  if (value == null) delete process.env.FROUTER_NO_FETCH;
-  else process.env.FROUTER_NO_FETCH = value;
+  const prev = process.env.FREE_ROUTER_NO_FETCH;
+  if (value == null) delete process.env.FREE_ROUTER_NO_FETCH;
+  else process.env.FREE_ROUTER_NO_FETCH = value;
   try {
     await run();
   } finally {
-    if (prev == null) delete process.env.FROUTER_NO_FETCH;
-    else process.env.FROUTER_NO_FETCH = prev;
+    if (prev == null) delete process.env.FREE_ROUTER_NO_FETCH;
+    else process.env.FREE_ROUTER_NO_FETCH = prev;
   }
 }
 
