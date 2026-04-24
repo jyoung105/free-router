@@ -97,7 +97,7 @@ test("first-run onboarding rejects invalid key prefix and does not persist malfo
     assert.match(result.stdout, /Expected prefix "nvapi-"/);
     assert.match(result.stdout, /0 key\(s\) saved/);
 
-    const cfg = JSON.parse(readFileSync(join(home, ".frouter.json"), "utf8"));
+    const cfg = JSON.parse(readFileSync(join(home, ".free-router.json"), "utf8"));
     assert.equal(cfg.apiKeys.nvidia, undefined);
     assert.equal(cfg.apiKeys.openrouter, undefined);
 
@@ -123,7 +123,7 @@ test("onboarding edge case: ESC on both providers saves zero keys", async () => 
 
     assert.equal(result.code, 0);
     assert.match(result.stdout, /0 key\(s\) saved/);
-    const cfg = JSON.parse(readFileSync(join(home, ".frouter.json"), "utf8"));
+    const cfg = JSON.parse(readFileSync(join(home, ".free-router.json"), "utf8"));
     assert.deepEqual(cfg.apiKeys, {});
   } finally {
     cleanupTempHome(home);
@@ -142,7 +142,7 @@ test("onboarding error scenario: browser open failure is non-fatal", async () =>
 
     assert.equal(result.code, 0);
     assert.match(result.stdout, /browser opened|Paste NVIDIA NIM key/);
-    const cfg = JSON.parse(readFileSync(join(home, ".frouter.json"), "utf8"));
+    const cfg = JSON.parse(readFileSync(join(home, ".free-router.json"), "utf8"));
     assert.equal(cfg.apiKeys.nvidia, "nvapi-demo");
   } finally {
     cleanupTempHome(home);
