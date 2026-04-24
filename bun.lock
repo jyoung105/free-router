@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "frouter-cli",
+      "name": "free-router",
       "dependencies": {
         "@inkjs/ui": "^2.0.0",
         "ink": "^7.0.0",
