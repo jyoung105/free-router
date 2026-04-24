@@ -2,12 +2,12 @@
 
 This repository uses **independent SemVer** for each deliverable:
 
-- CLI package: `package.json` (`frouter-cli`)
-- Site package: `site/package.json` (`frouter-site`)
+- CLI package: `package.json` (`free-router`)
+- Site package: `site/package.json` (`free-router-site`)
 
 ## 1) SemVer policy (major/minor/patch)
 
-### frouter CLI (`frouter-cli`)
+### free-router CLI (`free-router`)
 
 - **MAJOR** (`X.0.0`): breaking CLI contract
   - renamed/removed flags or commands
@@ -19,7 +19,7 @@ This repository uses **independent SemVer** for each deliverable:
 - **PATCH** (`x.y.Z`): backward-compatible fixes
   - bug fixes, security fixes, performance tuning, docs-only behavior clarifications
 
-### site (`frouter-site`)
+### site (`free-router-site`)
 
 - **MAJOR**: breaking information architecture/routing/data contract for consumers
 - **MINOR**: new pages/features/components without breaking existing URLs/API
