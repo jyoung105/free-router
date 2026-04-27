@@ -6,13 +6,11 @@
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
-    <link rel="icon" type="image/x-icon" href="/logo/light/favicon.ico" media="(prefers-color-scheme: light)" data-favicon="ico" />
-    <link rel="icon" type="image/x-icon" href="/logo/dark/favicon.ico" media="(prefers-color-scheme: dark)" data-favicon="ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/logo/light/favicon-32x32.png" media="(prefers-color-scheme: light)" data-favicon="32" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/logo/dark/favicon-32x32.png" media="(prefers-color-scheme: dark)" data-favicon="32" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/logo/light/favicon-16x16.png" media="(prefers-color-scheme: light)" data-favicon="16" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/logo/dark/favicon-16x16.png" media="(prefers-color-scheme: dark)" data-favicon="16" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/logo/light/apple-touch-icon.png" data-favicon="apple" />
+    <link id="favicon-ico" rel="icon" type="image/x-icon" href="/logo/light/favicon.ico" sizes="any" />
+    <link id="favicon-32" rel="icon" type="image/png" sizes="32x32" href="/logo/light/favicon-32x32.png" />
+    <link id="favicon-16" rel="icon" type="image/png" sizes="16x16" href="/logo/light/favicon-16x16.png" />
+    <link id="apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="/logo/light/apple-touch-icon.png" />
+    <link id="site-webmanifest" rel="manifest" href="/logo/light/site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -38,6 +36,26 @@
     />
     <link rel="stylesheet" href="/src/style.css" />
     __HEAD_META__
+    <script>
+      (function () {
+        try {
+          var theme = localStorage.getItem("fr-theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+          document.documentElement.classList.toggle("dark", theme === "dark");
+          var base = "/logo/" + theme + "/";
+          var assets = {
+            "favicon-ico": "favicon.ico",
+            "favicon-32": "favicon-32x32.png",
+            "favicon-16": "favicon-16x16.png",
+            "apple-touch-icon": "apple-touch-icon.png",
+            "site-webmanifest": "site.webmanifest"
+          };
+          Object.keys(assets).forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) el.setAttribute("href", base + assets[id]);
+          });
+        } catch (error) {}
+      })();
+    </script>
   </head>
   <body>
     <a href="#main" class="skip-link">Skip to content</a>
