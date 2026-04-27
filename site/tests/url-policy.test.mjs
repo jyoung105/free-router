@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  SITE_ORIGIN,
   canonicalPathSerializer,
   normalizeBasePath,
   redirectMatcher,
@@ -22,24 +23,23 @@ test('redirectMatcher returns slashless matcher form', () => {
   assert.equal(redirectMatcher('/models/foo/', '/'), '/models/foo');
 });
 
-test('resolveBuildContext requires preview origins from preview env', () => {
-  const context = resolveBuildContext({
-    VERCEL_ENV: 'preview',
-    VERCEL_URL: 'preview.example.vercel.app',
-  });
+test('resolveBuildContext uses the fixed production site origin', () => {
+  const context = resolveBuildContext();
 
-  assert.equal(context.mode, 'preview');
-  assert.equal(context.origin, 'https://preview.example.vercel.app');
-  assert.equal(context.robotsContent, 'noindex, nofollow');
+  assert.equal(context.mode, 'production');
+  assert.equal(context.origin, SITE_ORIGIN);
+  assert.equal(context.basePath, '/');
+  assert.equal(context.robotsContent, 'index, follow');
 });
 
-test('validateBuildContext rejects insecure production origins', () => {
+test('validateBuildContext rejects insecure required HTTPS origins', () => {
   const errors = validateBuildContext({
     mode: 'production',
     origin: 'http://example.com',
+    requiresHttps: true,
   });
 
-  assert.deepEqual(errors, ['Production SITE_URL must be HTTPS']);
+  assert.deepEqual(errors, ['Site origin must be HTTPS']);
 });
 
 test('sitemapUrlBuilder emits absolute URLs', () => {
