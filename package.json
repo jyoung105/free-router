@@ -1,6 +1,6 @@
 {
   "name": "free-router",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "Free model router — discover, ping, and configure free AI models for OpenCode / OpenClaw",
   "bin": {
     "free-router": "dist/bin/free-router.js"
