@@ -319,6 +319,35 @@ function buildSitemap(records, context) {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`;
 }
 
+function escapeMarkdownInline(value) {
+  return String(value).replace(/[`\\]/g, '\\$&');
+}
+
+function buildLlmsTxt(records, context) {
+  const lines = [
+    '# free-router',
+    '',
+    '> Free AI model router for agents. Browse free coding models, compare benchmark signals, and route requests through fast free providers.',
+    '',
+    '## Core Pages',
+    '',
+    `- [Homepage](${sitemapUrlBuilder('/', context)}): Searchable index of free AI coding models with provider, tier, context, benchmark, and speed signals.`,
+    `- [Sitemap](${sitemapUrlBuilder('/sitemap.xml', context)}): XML sitemap containing the canonical crawlable page list.`,
+    `- [Robots](${sitemapUrlBuilder('/robots.txt', context)}): Crawler policy for search and AI user agents.`,
+    '',
+    '## Model Profiles',
+    '',
+  ];
+
+  for (const record of records) {
+    lines.push(
+      `- [${escapeMarkdownInline(record.name)}](${record.absoluteUrl}): ${escapeMarkdownInline(record.sourceLabel)} model profile for \`${escapeMarkdownInline(record.model_id)}\`, tier ${escapeMarkdownInline(record.tier)}, context ${escapeMarkdownInline(record.context)}.`,
+    );
+  }
+
+  return `${lines.join('\n')}\n`;
+}
+
 function buildVerificationReport({ context, manifestRedirects, recordErrors, records }) {
   return {
     mode: context.mode,
@@ -467,6 +496,7 @@ export async function generateSite({ env = process.env, writeManifest = false } 
   await writeModelPages(records, context, homeUrl);
   await writeFile(path.join(GENERATED_PUBLIC_DIR, 'robots.txt'), buildRobotsTxt(context), 'utf8');
   await writeFile(path.join(GENERATED_PUBLIC_DIR, 'sitemap.xml'), buildSitemap(records, context), 'utf8');
+  await writeFile(path.join(GENERATED_PUBLIC_DIR, 'llms.txt'), buildLlmsTxt(records, context), 'utf8');
   await writeFile(
     path.join(GENERATED_STATE_DIR, 'slug-manifest.generated.json'),
     `${JSON.stringify(nextManifest, null, 2)}\n`,
