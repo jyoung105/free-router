@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Migration shim — frouter-cli moved to @bytonylee/free-router.
-// This wrapper preserves the old frouter bin while forwarding execution to
-// the canonical package.
+// This wrapper lets legacy frouter-cli installs expose the canonical
+// free-router command while forwarding execution to the canonical package.
 
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
@@ -14,7 +14,7 @@ const NEW_PACKAGE = "@bytonylee/free-router";
 
 process.stderr.write(
   `\n${YELLOW}  frouter-cli moved to ${BOLD}${NEW_PACKAGE}${RESET}${YELLOW}.\n` +
-    `  This shim is forwarding the ${BOLD}frouter${RESET}${YELLOW} command for backward compatibility.\n` +
+    `  This shim is forwarding the ${BOLD}free-router${RESET}${YELLOW} command to the canonical package.\n` +
     `  Reinstall with: ${BOLD}npm install -g ${NEW_PACKAGE}${RESET}${YELLOW} ` +
     `(or: ${BOLD}bun install -g ${NEW_PACKAGE}${RESET}${YELLOW})${RESET}\n\n`,
 );
@@ -44,6 +44,6 @@ child.on("exit", (code, signal) => {
 });
 
 child.on("error", (err) => {
-  process.stderr.write(`\x1b[31m  frouter failed to start: ${err.message}${RESET}\n`);
+  process.stderr.write(`\x1b[31m  free-router failed to start: ${err.message}${RESET}\n`);
   process.exit(1);
 });

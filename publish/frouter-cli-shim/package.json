@@ -4,7 +4,7 @@
   "description": "DEPRECATED — moved to @bytonylee/free-router. This shim re-execs the new package for backward compatibility.",
   "type": "module",
   "bin": {
-    "frouter": "bin.js"
+    "free-router": "bin.js"
   },
   "dependencies": {
     "@bytonylee/free-router": "^1.2.0"

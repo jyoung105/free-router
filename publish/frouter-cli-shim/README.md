@@ -7,7 +7,7 @@ npm install -g @bytonylee/free-router
 ```
 
 This package is now a compatibility shim. It depends on `@bytonylee/free-router`,
-prints a rename notice, and forwards the `frouter` command.
+prints a rename notice, and forwards the `free-router` command.
 
 ## Publish
 
