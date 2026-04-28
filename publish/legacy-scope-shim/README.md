@@ -12,9 +12,9 @@ prints a rename notice, and forwards the `free-router` command.
 ## Publish
 
 ```bash
-cd legacy-scope-shim/
+cd publish/legacy-scope-shim/
 npm publish --access public
-cd ..
+cd ../..
 npm deprecate "@jyoung105/free-router@*" "Moved to @bytonylee/free-router. Install: npm i -g @bytonylee/free-router"
 ```
 
