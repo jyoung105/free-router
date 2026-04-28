@@ -81,6 +81,11 @@ const HIDEC = "\x1b[?25l";
 const SHOWC = "\x1b[?25h";
 const INVERT = "\x1b[7m";
 const BG_HDR = "\x1b[48;5;17m";
+const BG_SEARCH = "\x1b[48;5;235m";
+const BG_OK = "\x1b[48;5;22m";
+const BG_WARN = "\x1b[48;5;58m";
+const BG_BAD = "\x1b[48;5;52m";
+const BG_OFF = "\x1b[48;5;238m";
 const ALT_ON = "\x1b[?1049h";
 const ALT_OFF = "\x1b[?1049l";
 const ALLOW_PLAINTEXT_KEY_EXPORT =
@@ -182,7 +187,7 @@ const DEFAULT_COLS = 80;
 const DEFAULT_ROWS = 12;
 const MIN_COLS = 40;
 const MIN_ROWS = 8;
-const BASE_CHROME_ROWS = 5;
+const BASE_CHROME_ROWS = 9;
 
 function envSize(name: string): number | null {
   const raw = process.env[name];
@@ -235,7 +240,7 @@ function viewport() {
 const cols = () => viewport().c;
 const rows = () => viewport().r;
 // All lines are truncated to terminal width so nothing wraps.
-// Chrome: header(1) + search bar(1) + colhdr(1) + detail(1) + footer(1) = 5 lines
+// Chrome: header block(3) + search block(3) + colhdr/detail/footer = 9 lines
 const mainChromeRows = () => BASE_CHROME_ROWS + (topAlertLine() ? 1 : 0);
 const tRows = () => Math.max(0, rows() - mainChromeRows());
 const WRAP_GUARD_COLS = 1;
@@ -302,6 +307,29 @@ function fullWidthLine(content: string, lastLine = false) {
   const maxW = Math.max(0, c - guard);
   const truncated = truncAnsi(content, maxW);
   return `${truncated}${" ".repeat(Math.max(0, maxW - visLen(truncated)))}`;
+}
+
+function blockWidthLines(
+  left: string,
+  right = "",
+  borderStyle = `${D}${WHITE}`,
+) {
+  const c = cols();
+  const guard = WRAP_GUARD_COLS;
+  const maxW = Math.max(0, c - guard);
+  if (maxW <= 4) return [fullWidthLine(""), fullWidthLine(""), fullWidthLine("")];
+
+  const innerW = maxW - 2;
+  const rightPart = right ? truncAnsi(right, innerW) : "";
+  const leftMaxW = Math.max(0, innerW - visLen(rightPart) - (rightPart ? 1 : 0));
+  const leftPart = truncAnsi(left, leftMaxW);
+  const gapW = Math.max(0, innerW - visLen(leftPart) - visLen(rightPart));
+  const top = `${borderStyle}╭${"─".repeat(Math.max(0, innerW))}╮${R}`;
+  const middle = `${borderStyle}│${R}${leftPart}${" ".repeat(gapW)}${rightPart}${borderStyle}│${R}`;
+  const bottom = `${borderStyle}╰${"─".repeat(Math.max(0, innerW))}╯${R}`;
+  return [top, middle, bottom].map((line) =>
+    `${line}${" ".repeat(Math.max(0, maxW - visLen(line)))}`,
+  );
 }
 
 // Truncate a string with ANSI codes to at most `maxVis` visible columns.
@@ -387,6 +415,34 @@ function topAlertLine(): string | null {
   return null;
 }
 
+function providerStatusBlock(providerKey: string, label: string): string {
+  const on = config.providers?.[providerKey]?.enabled !== false;
+  if (!on) return `${BG_OFF}${WHITE} ${label} OFF ${R}`;
+
+  const key = getApiKey(config, providerKey);
+  if (!key) return `${BG_WARN}${WHITE}${B} ${label} NO KEY ${R}`;
+  if (isProviderKeyRejected(providerKey)) {
+    return `${BG_BAD}${WHITE}${B} ${label} WRONG KEY ${R}`;
+  }
+  return `${BG_OK}${WHITE}${B} ${label} READY ${R}`;
+}
+
+function renderHeaderLines(): string[] {
+  const providerBlocks = Object.entries(PROVIDERS_META)
+    .map(([pk, meta]) => providerStatusBlock(pk, meta.name))
+    .join(" ");
+  const title = `${BG_HDR}${WHITE}${B} free-router ${R} ${WHITE}Free Model Router${R}`;
+  return blockWidthLines(title, providerBlocks, `${CYAN}${B}`);
+}
+
+function renderSearchLines(stats: string, tierBar: string): string[] {
+  const input = searchMode ? `/${searchQuery}_` : "Press / to search models";
+  const hint = searchMode ? "ESC clear  Enter apply" : "/ start";
+  const searchField = `${BG_SEARCH}${WHITE}${B} Model Search ${R} ${CYAN}${input}${R}`;
+  const right = `${tierBar}${stats}  ${D}${hint}${R}`;
+  return blockWidthLines(searchField, right, `${WHITE}${B}`);
+}
+
 // ─── Main TUI ──────────────────────────────────────────────────────────────────
 function renderMain() {
   const { c, r } = viewport();
@@ -394,35 +450,6 @@ function renderMain() {
   const tr = Math.max(0, r - mainChromeRows());
   if (cursor < scrollOff) scrollOff = cursor;
   if (cursor >= scrollOff + tr) scrollOff = cursor - tr + 1;
-
-  const provStatus = Object.entries(PROVIDERS_META)
-    .map(([pk, m]) => {
-      const on = config.providers?.[pk]?.enabled !== false;
-      if (!on) return `${D}${m.name} off${R}`;
-      const key = getApiKey(config, pk);
-      if (!key) return `${YELLOW}${m.name} ○${R}`;
-      if (isProviderKeyRejected(pk)) return `${RED}${m.name} ✗${R}`;
-      return `${GREEN}${m.name} ✓${R}`;
-    })
-    .join("  ");
-
-  const searchLabel = `${CYAN}${B}[Model Search]${R}`;
-  const searchInput = searchMode
-    ? `${CYAN}/${searchQuery}_${R}`
-    : `${D}Press '/' to search models${R}`;
-  const keyBadges = Object.entries(PROVIDERS_META)
-    .filter(([pk]) => config.providers?.[pk]?.enabled !== false)
-    .map(([pk, m]) => {
-      const key = getApiKey(config, pk);
-      if (!key) return `${YELLOW}${m.name}:○${R}`;
-      if (isProviderKeyRejected(pk)) return `${RED}${m.name}:✗${R}`;
-      return `${GREEN}${m.name}:✓${R}`;
-    })
-    .join("  ");
-  const searchHint = searchMode
-    ? `${YELLOW}[ESC clear]${R} ${GREEN}[Enter apply]${R}`
-    : `${CYAN}[/ start]${R}`;
-  const searchBar = `${searchLabel} ${searchInput} ${keyBadges}  ${searchHint}`;
 
   const tierBar =
     tierFilter !== "All" ? `${YELLOW}tier:${tierFilter}${R}  ` : "";
@@ -447,12 +474,11 @@ function renderMain() {
   let out = (FORCE_FRAME_CLEAR ? CLEAR : CURSOR_HOME) + HIDEC;
 
   // Header
-  const hdrRaw = `${BG_HDR}${WHITE}${B} free-router ${R}  ${provStatus}${R}`;
-  out += fullWidthLine(hdrRaw) + "\n";
+  for (const line of renderHeaderLines()) out += line + "\n";
   if (topAlert) out += fullWidthLine(topAlert) + "\n";
 
   // Search + stats bar
-  out += fullWidthLine(` ${searchBar}   ${tierBar}${stats}`) + "\n";
+  for (const line of renderSearchLines(stats, tierBar)) out += line + "\n";
 
   // Column headers with sort indicators
   const hdr = `  ${"#".padStart(3)}  ${colHdr("Tier", "tier", 4)}  ${colHdr("Provider", "provider", 11)}  ${colHdr("Model", "model", 32)}  ${colHdr("Ctx", "context", 5, true)}  ${colHdr("AA", "intel", 3, true)}  ${colHdr("Avg", "avg", 6, true)}  ${colHdr("Lat", "latest", 6, true)}  ${colHdr("Up%", "uptime", 4, true)}  ${colHdr("Verdict", "verdict", 7)}`;
