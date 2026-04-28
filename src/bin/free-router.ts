@@ -82,6 +82,7 @@ const SHOWC = "\x1b[?25h";
 const INVERT = "\x1b[7m";
 const BG_HDR = "\x1b[48;5;17m";
 const BG_SEARCH = "\x1b[48;5;235m";
+const GRAY = "\x1b[90m";
 const ALT_ON = "\x1b[?1049h";
 const ALT_OFF = "\x1b[?1049l";
 const ALLOW_PLAINTEXT_KEY_EXPORT =
@@ -412,9 +413,11 @@ function topAlertLine(): string | null {
 }
 
 function renderSearchLines(stats: string, tierBar: string): string[] {
-  const input = searchMode ? `/${searchQuery}_` : "Press / to search models";
+  const input = searchMode
+    ? `${CYAN}/${searchQuery}_${R}`
+    : `${GRAY}Press / to search models${R}`;
   const hint = searchMode ? "ESC clear  Enter apply" : "/ start";
-  const searchField = `${BG_SEARCH}${WHITE}${B} Model Search ${R} ${CYAN}${input}${R}`;
+  const searchField = `${BG_SEARCH}${WHITE}${B} Model Search ${R} ${input}`;
   const right = `${tierBar}${stats}  ${D}${hint}${R}`;
   return blockWidthLines(searchField, right, `${WHITE}${B}`);
 }
