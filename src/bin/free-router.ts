@@ -188,7 +188,7 @@ const DEFAULT_COLS = 80;
 const DEFAULT_ROWS = 12;
 const MIN_COLS = 40;
 const MIN_ROWS = 8;
-const BASE_CHROME_ROWS = 6;
+const BASE_CHROME_ROWS = 7;
 
 function envSize(name: string): number | null {
   const raw = process.env[name];
@@ -241,7 +241,7 @@ function viewport() {
 const cols = () => viewport().c;
 const rows = () => viewport().r;
 // All lines are truncated to terminal width so nothing wraps.
-// Chrome: search block(3) + colhdr/detail/footer = 6 lines
+// Chrome: provider tag row + search block(3) + colhdr/detail/footer = 7 lines
 const mainChromeRows = () => BASE_CHROME_ROWS + (topAlertLine() ? 1 : 0);
 const tRows = () => Math.max(0, rows() - mainChromeRows());
 const WRAP_GUARD_COLS = 1;
@@ -308,6 +308,14 @@ function fullWidthLine(content: string, lastLine = false) {
   const maxW = Math.max(0, c - guard);
   const truncated = truncAnsi(content, maxW);
   return `${truncated}${" ".repeat(Math.max(0, maxW - visLen(truncated)))}`;
+}
+
+function rightWidthLine(content: string, lastLine = false) {
+  const c = cols();
+  const guard = lastLine ? Math.max(1, WRAP_GUARD_COLS) : WRAP_GUARD_COLS;
+  const maxW = Math.max(0, c - guard);
+  const truncated = truncAnsi(content, maxW);
+  return `${" ".repeat(Math.max(0, maxW - visLen(truncated)))}${truncated}`;
 }
 
 function blockWidthLines(
@@ -428,16 +436,23 @@ function providerStatusTag(providerKey: string, label: string): string {
   return `${BG_OK}${WHITE}${B} ${label} READY ${R}`;
 }
 
+function providerStatusTags(): string {
+  return Object.entries(PROVIDERS_META)
+    .map(([pk, meta]) => providerStatusTag(pk, meta.name))
+    .join(" ");
+}
+
+function renderProviderTagLine(): string {
+  return rightWidthLine(providerStatusTags());
+}
+
 function renderSearchLines(stats: string, tierBar: string): string[] {
   const input = searchMode
     ? `${CYAN}/${searchQuery}_${R}`
     : `${GRAY}Press / to search models${R}`;
   const hint = searchMode ? "ESC clear  Enter apply" : "/ start";
   const searchField = `${BG_SEARCH}${WHITE}${B} Model Search ${R} ${input}`;
-  const providerTags = Object.entries(PROVIDERS_META)
-    .map(([pk, meta]) => providerStatusTag(pk, meta.name))
-    .join(" ");
-  const right = `${providerTags}  ${tierBar}${stats}  ${D}${hint}${R}`;
+  const right = `${tierBar}${stats}  ${D}${hint}${R}`;
   return blockWidthLines(searchField, right, `${WHITE}${B}`);
 }
 
@@ -472,6 +487,7 @@ function renderMain() {
   let out = (FORCE_FRAME_CLEAR ? CLEAR : CURSOR_HOME) + HIDEC;
 
   if (topAlert) out += fullWidthLine(topAlert) + "\n";
+  out += renderProviderTagLine() + "\n";
 
   // Search + stats bar
   for (const line of renderSearchLines(stats, tierBar)) out += line + "\n";
