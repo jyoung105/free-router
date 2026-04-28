@@ -793,7 +793,7 @@ function renderSettings() {
     const toggleStr = enabled ? `${GREEN}[ ON  ]${R}` : `${RED}[ OFF ]${R}`;
     let keyDisp;
     if (sEditing && isSel) {
-      keyDisp = `${CYAN}${"•".repeat(sKeyBuf.length)}_${R}`;
+      keyDisp = `${CYAN}${sKeyBuf}_${R}`;
     } else if (key) {
       keyDisp = maskKey(key);
     } else {
@@ -1189,7 +1189,6 @@ function openApiKeyEditorFromMain(providerKey?: string) {
   _resetSettingsState();
   sCursor = Math.max(0, pks.indexOf(resolvedProviderKey));
   screen = "settings";
-  sEditing = true;
 
   const meta = PROVIDERS_META[resolvedProviderKey];
   if (meta?.signupUrl && !getApiKey(config, resolvedProviderKey)) {
@@ -1372,7 +1371,7 @@ function handleSettings(ch: string) {
     sNotice = "";
   } else if (ch === "\r") {
     sEditing = true;
-    sKeyBuf = "";
+    sKeyBuf = getApiKey(config, currentPk) || "";
     sNotice = "";
   } else if (ch === "d" || ch === "D") {
     if (config.apiKeys?.[currentPk]) {
