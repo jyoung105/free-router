@@ -2,6 +2,11 @@
 // scripts/update-models.ts — Sync free model catalogs (NIM + OpenRouter),
 // OpenCode-supported model IDs (models.dev), and AI metadata (Artificial Analysis).
 //
+// Catalog rule:
+// - keep only text-generation LLMs and vision-language models (VLMs)
+// - allow text output with text-only or text+image style inputs
+// - exclude OCR, video, audio, speech, embedding, rerank, safety, and detector models
+//
 // Usage:
 //   npx tsx scripts/update-models.ts [--apply] [--report <path>] [--fail-on-unresolved-tier]
 //
@@ -27,7 +32,12 @@ const FAIL_ON_UNRESOLVED_TIER = process.argv.includes(
 );
 const REPORT_PATH = readFlagValue("--report");
 
-const AA_ENDPOINTS = ["/api/v2/models", "/api/v1/models", "/api/models"];
+const AA_ENDPOINTS = [
+  "/api/v2/data/llms/models",
+  "/api/v2/models",
+  "/api/v1/models",
+  "/api/models",
+];
 
 type ProviderKey = "nvidia" | "openrouter";
 
@@ -317,6 +327,18 @@ const NON_CHAT_KEYWORDS = [
   "nvclip",
   "nemoretriever",
   "nemotron-content-safety",
+  "ocr",
+  "video",
+  "audio",
+  "speech",
+  "voice",
+  "speaker",
+  "detector",
+  "detection",
+  "translate",
+  "translation",
+  "transfer",
+  "localization",
 ];
 
 const BASE_MODEL_PATTERNS = [
@@ -332,6 +354,39 @@ function isNonChatModel(id: string): boolean {
   if (NON_CHAT_KEYWORDS.some((kw) => lower.includes(kw))) return true;
   if (BASE_MODEL_PATTERNS.some((p) => p.test(id))) return true;
   return false;
+}
+
+function isAllowedOpenRouterModel(model: any): boolean {
+  if (model?.pricing?.prompt !== "0" || model?.pricing?.completion !== "0") {
+    return false;
+  }
+
+  const outputModalities = model?.architecture?.output_modalities;
+  if (!Array.isArray(outputModalities) || !outputModalities.includes("text")) {
+    return false;
+  }
+  const allowedOutputs = new Set(["text"]);
+  if (outputModalities.some((output: string) => !allowedOutputs.has(output))) {
+    return false;
+  }
+
+  const inputModalities = Array.isArray(model?.architecture?.input_modalities)
+    ? model.architecture.input_modalities
+    : ["text"];
+  const allowedInputs = new Set(["text", "image"]);
+  if (inputModalities.some((input: string) => !allowedInputs.has(input))) {
+    return false;
+  }
+
+  const id = String(model?.id || "").toLowerCase();
+  const name = String(model?.name || "").toLowerCase();
+  const description = String(model?.description || "").toLowerCase();
+  const searchable = `${id} ${name} ${description}`;
+
+  if (searchable.includes("openrouter/free")) return false;
+  if (NON_CHAT_KEYWORDS.some((kw) => searchable.includes(kw))) return false;
+
+  return true;
 }
 
 // ─── Parse hardcoded NIM list from src/lib/models.ts ────────────────────────
@@ -493,16 +548,37 @@ function writeSupportFile(
   support: ReturnType<typeof emptySupportSets>,
   fetchedFromGithub: boolean,
 ) {
+  const source = fetchedFromGithub
+    ? "https://github.com/opencode-ai/opencode/blob/main/internal/llm/models/"
+    : "https://models.dev/api.json";
+  const note =
+    "OpenCode has NO built-in nvidia/NIM provider. OpenRouter has ~20 hardcoded models.";
+  const providers = {
+    nvidia: [...support.nvidia].sort((a, b) => a.localeCompare(b)),
+    openrouter: [...support.openrouter].sort((a, b) => a.localeCompare(b)),
+  };
+
+  let existingUpdatedAt = new Date().toISOString();
+  if (existsSync(SUPPORT_PATH)) {
+    try {
+      const existing = JSON.parse(readFileSync(SUPPORT_PATH, "utf8"));
+      const sameCore =
+        existing?.source === source &&
+        existing?.note === note &&
+        JSON.stringify(existing?.providers) === JSON.stringify(providers);
+      if (sameCore && typeof existing?.updated_at === "string") {
+        existingUpdatedAt = existing.updated_at;
+      }
+    } catch {
+      // fall through and write a fresh timestamp
+    }
+  }
+
   const next = {
-    source: fetchedFromGithub
-      ? "https://github.com/opencode-ai/opencode/blob/main/internal/llm/models/"
-      : "https://models.dev/api.json",
-    updated_at: new Date().toISOString(),
-    note: "OpenCode has NO built-in nvidia/NIM provider. OpenRouter has ~20 hardcoded models.",
-    providers: {
-      nvidia: [...support.nvidia].sort((a, b) => a.localeCompare(b)),
-      openrouter: [...support.openrouter].sort((a, b) => a.localeCompare(b)),
-    },
+    source,
+    updated_at: existingUpdatedAt,
+    note,
+    providers,
   };
   writeFileSync(SUPPORT_PATH, JSON.stringify(next, null, 2) + "\n");
 }
@@ -531,11 +607,15 @@ function firstString(...values: unknown[]): string {
 
 function toAAMeta(row: any): AAMeta | null {
   const slug = firstString(row?.aa_slug, row?.slug, row?.model_slug, row?.id);
+  const evaluations = row?.evaluations || {};
+  const pricing = row?.pricing || {};
   const sweRawValue =
     row?.swe_bench ??
     row?.sweBench ??
     row?.swe_bench_verified ??
-    row?.sweBenchVerified;
+    row?.sweBenchVerified ??
+    evaluations?.swe_bench ??
+    evaluations?.sweBench;
   const sweNum = parsePercentToNumber(sweRawValue);
   const swe = sweNum == null ? null : `${sweNum}%`;
 
@@ -548,16 +628,34 @@ function toAAMeta(row: any): AAMeta | null {
     swe_bench: swe,
     aa_slug: slug,
     aa_intelligence: parseNumberOrNull(
-      row?.aa_intelligence ?? row?.intelligence_index ?? row?.intelligence,
+      row?.aa_intelligence ??
+        row?.intelligence_index ??
+        row?.intelligence ??
+        evaluations?.artificial_analysis_intelligence_index,
     ),
-    aa_speed_tps: parseNumberOrNull(row?.aa_speed_tps ?? row?.speed_tps),
+    aa_speed_tps: parseNumberOrNull(
+      row?.aa_speed_tps ??
+        row?.speed_tps ??
+        row?.median_output_tokens_per_second,
+    ),
     aa_price_input: parseNumberOrNull(
-      row?.aa_price_input ?? row?.price_input ?? row?.input_price,
+      row?.aa_price_input ??
+        row?.price_input ??
+        row?.input_price ??
+        pricing?.price_1m_input_tokens,
     ),
     aa_price_output: parseNumberOrNull(
-      row?.aa_price_output ?? row?.price_output ?? row?.output_price,
+      row?.aa_price_output ??
+        row?.price_output ??
+        row?.output_price ??
+        pricing?.price_1m_output_tokens,
     ),
-    aa_context: firstString(row?.aa_context, row?.context, row?.context_window),
+    aa_context: firstString(
+      row?.aa_context,
+      row?.context,
+      row?.context_window,
+      row?.contextWindow,
+    ),
     aa_url,
     tier,
   };
@@ -589,6 +687,12 @@ function indexAAModels(rows: any[]) {
 
     const modelId = firstString(row?.model_id, row?.modelId, row?.id);
     const modelName = firstString(row?.name, row?.model_name, row?.title);
+    const creatorSlug = firstString(
+      row?.model_creator?.slug,
+      row?.modelCreator?.slug,
+      row?.creator_slug,
+      row?.creatorSlug,
+    );
 
     if (modelId) {
       const bare = normalizeModelId(modelId);
@@ -598,6 +702,7 @@ function indexAAModels(rows: any[]) {
 
     if (meta.aa_slug) {
       setIfAbsent(meta.aa_slug, meta);
+      if (creatorSlug) setIfAbsent(`${creatorSlug}/${meta.aa_slug}`, meta);
     }
 
     if (modelName) {
@@ -832,7 +937,7 @@ async function main() {
   }
 
   // ── Fetch OpenRouter free + tools models ──────────────────────────────────
-  console.log("Fetching OpenRouter free tool-capable models...");
+  console.log("Fetching OpenRouter free LLM/VLM models...");
   const orKey = loadApiKey("openrouter");
   let orApiModels: CatalogModel[] = [];
   let orFetchOk = false;
@@ -844,14 +949,7 @@ async function main() {
 
     const models = Array.isArray(orData.data) ? orData.data : [];
     orApiModels = models
-      .filter(
-        (m: any) =>
-          m?.pricing?.prompt === "0" &&
-          m?.pricing?.completion === "0" &&
-          Array.isArray(m?.supported_parameters) &&
-          m.supported_parameters.includes("tools"),
-      )
-      .filter((m: any) => m.id !== "openrouter/free")
+      .filter((m: any) => isAllowedOpenRouterModel(m))
       .map((m: any) => ({
         id: m.id,
         name: m.name || m.id,
@@ -862,7 +960,7 @@ async function main() {
     orFetchOk = true;
     report.providers.openrouter.fetched = true;
     report.providers.openrouter.total = orApiModels.length;
-    console.log(`  Found ${orApiModels.length} OpenRouter free tool models\n`);
+    console.log(`  Found ${orApiModels.length} OpenRouter free LLM/VLM models\n`);
   } catch (err: any) {
     console.error(`  Failed to fetch OpenRouter: ${err.message}\n`);
   }
