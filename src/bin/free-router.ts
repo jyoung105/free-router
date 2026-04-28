@@ -82,7 +82,6 @@ const CLEAR_TO_EOL = "\x1b[K";
 const HIDEC = "\x1b[?25l";
 const SHOWC = "\x1b[?25h";
 const INVERT = "\x1b[7m";
-const BG_HDR = "\x1b[48;5;17m";
 const BG_SEARCH = "\x1b[48;5;235m";
 const BG_TABLE_HDR = "\x1b[48;5;236m";
 const BG_OK = "\x1b[48;5;22m";
@@ -734,7 +733,8 @@ function renderHelp() {
   w(
     CLEAR +
       HIDEC +
-      `${BG_HDR}${WHITE}${B} free-router — Keyboard Reference ${R}\n\n` +
+      fullWidthBar(" free-router — Keyboard Reference ", BG_TABLE_HDR) +
+      "\n\n" +
       `${B}  Navigation${R}\n` +
       `  ↑ / k       Move up\n` +
       `  ↓ / j       Move down\n` +
@@ -753,7 +753,8 @@ function renderHelp() {
       `${B}  Sort (press key to sort, press again to reverse)${R}\n` +
       sortLines +
       "\n" +
-      `\n${INVERT} Press any key to close ${R}\n`,
+      "\n" +
+      fullWidthBar(" Press any key to close ", BG_TABLE_HDR, true),
   );
 }
 
@@ -765,7 +766,7 @@ function maskKey(key: string) {
 
 function renderSettings() {
   let out = CLEAR + HIDEC;
-  out += `${BG_HDR}${WHITE}${B} free-router Settings ${R}\n\n`;
+  out += fullWidthBar(" free-router — API Keys ", BG_TABLE_HDR) + "\n\n";
 
   const pks = Object.keys(PROVIDERS_META);
   for (let i = 0; i < pks.length; i++) {
@@ -790,7 +791,13 @@ function renderSettings() {
     out += `${prefix}${toggleStr} ${pad(meta.name, 14)} ${keyDisp}${testDisp}\n`;
   }
 
-  out += `\n${INVERT} ↑↓:navigate  Enter:edit key  Space:toggle  T:test  D:delete key  ESC:back ${R}\n`;
+  out +=
+    "\n" +
+    fullWidthBar(
+      " ↑↓:navigate  Enter:edit key  Space:toggle  T:test  D:delete key  ESC:back ",
+      BG_TABLE_HDR,
+      !sEditing && !sNotice,
+    );
   if (sEditing) out += `\n${D} Type key  •  Enter:save  •  ESC:cancel${R}\n`;
   if (sNotice) out += `\n${sNotice}\n`;
   w(out);
