@@ -1,4 +1,4 @@
-// src/tui/SettingsApp.tsx — Ink-based settings screen with PasswordInput + Spinner.
+// src/tui/settings-app.tsx — Ink-based settings screen with PasswordInput + Spinner.
 // Uses ink-harness (runs mid-session from ALT_ON state).
 
 import { useState, useRef } from "react";
