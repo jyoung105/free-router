@@ -239,7 +239,7 @@ export async function runFirstRunWizard(
   const [{ render }, React, { FirstRunApp }] = await Promise.all([
     import("ink"),
     import("react"),
-    import("../tui/FirstRunApp.js"),
+    import("../tui/first-run-app.js"),
   ]);
 
   const result = await new Promise<{

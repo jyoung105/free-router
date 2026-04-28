@@ -1,4 +1,4 @@
-// src/tui/FirstRunApp.tsx — Ink-based first-run wizard with Select + PasswordInput.
+// src/tui/first-run-app.tsx — Ink-based first-run wizard with Select + PasswordInput.
 // Runs pre-ALT_ON (normal terminal), no harness needed.
 
 import { useRef, useState } from "react";
