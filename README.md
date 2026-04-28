@@ -11,8 +11,8 @@
 
 ![Version](https://img.shields.io/badge/version-1.2.0-333333?style=flat-square)
 [![License: MIT License](https://img.shields.io/badge/License-MIT%20License-yellow.svg)](./LICENSE)
-[![npm downloads](https://img.shields.io/npm/dm/free-router)](https://www.npmjs.com/package/free-router)
-[![CI](https://github.com/jyoung105/free-router/actions/workflows/ci.yml/badge.svg)](https://github.com/jyoung105/free-router/actions/workflows/ci.yml)
+[![npm downloads](https://img.shields.io/npm/dm/%40bytonylee%2Ffree-router)](https://www.npmjs.com/package/@bytonylee/free-router)
+[![CI](https://github.com/bytonylee/free-router/actions/workflows/ci.yml/badge.svg)](https://github.com/bytonylee/free-router/actions/workflows/ci.yml)
 
 Free model router CLI — discover, ping, and configure free AI models for OpenCode / OpenClaw.
 
@@ -21,13 +21,13 @@ Free model router CLI — discover, ping, and configure free AI models for OpenC
 ## Install
 
 ```bash
-npx free-router
+npx @bytonylee/free-router
 # or
-npm i -g free-router
+npm i -g @bytonylee/free-router
 # or
-bunx free-router
+bunx @bytonylee/free-router
 # or
-bun install -g free-router
+bun install -g @bytonylee/free-router
 ```
 
 ## Run

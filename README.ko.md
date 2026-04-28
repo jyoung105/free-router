@@ -11,8 +11,8 @@
 
 ![Version](https://img.shields.io/badge/version-1.2.0-333333?style=flat-square)
 [![License: MIT License](https://img.shields.io/badge/License-MIT%20License-yellow.svg)](./LICENSE)
-[![npm downloads](https://img.shields.io/npm/dm/free-router)](https://www.npmjs.com/package/free-router)
-[![CI](https://github.com/jyoung105/free-router/actions/workflows/ci.yml/badge.svg)](https://github.com/jyoung105/free-router/actions/workflows/ci.yml)
+[![npm downloads](https://img.shields.io/npm/dm/%40bytonylee%2Ffree-router)](https://www.npmjs.com/package/@bytonylee/free-router)
+[![CI](https://github.com/bytonylee/free-router/actions/workflows/ci.yml/badge.svg)](https://github.com/bytonylee/free-router/actions/workflows/ci.yml)
 
 무료 AI 모델 라우터 CLI — OpenCode / OpenClaw용 무료 모델을 탐색, 핑 테스트, 설정합니다.
 
@@ -21,13 +21,13 @@
 ## 설치
 
 ```bash
-npx free-router
+npx @bytonylee/free-router
 # 또는
-npm i -g free-router
+npm i -g @bytonylee/free-router
 # 또는
-bunx free-router
+bunx @bytonylee/free-router
 # 또는
-bun install -g free-router
+bun install -g @bytonylee/free-router
 ```
 
 ## 실행
