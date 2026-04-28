@@ -41,7 +41,7 @@ const I18N: Record<string, Record<string, string>> = {
   en: {
     "hero.providers": "2 providers",
     "hero.lede":
-      "Free model router for AI agents. Route requests through the fastest free models, compare providers, and start building in seconds.",
+      '<span class="lede-strong">Free model router for AI agents.</span><br />Route requests through the fastest free models, compare providers, and start building in seconds.',
     "hero.ctaRepo": "Read the README",
     "providers.label": "Providers",
     "providers.nim":
@@ -71,7 +71,7 @@ const I18N: Record<string, Record<string, string>> = {
   ko: {
     "hero.providers": "2개 제공자",
     "hero.lede":
-      "AI 에이전트를 위한 무료 모델 라우터. 가장 빠른 무료 모델로 요청을 라우팅하고, 제공자를 비교하며, 몇 초 만에 빌드를 시작하세요.",
+      '<span class="lede-strong">AI 에이전트를 위한 무료 모델 라우터.</span><br />가장 빠른 무료 모델로 요청을 라우팅하고, 제공자를 비교하며, 몇 초 만에 빌드를 시작하세요.',
     "hero.ctaRepo": "README 읽기",
     "providers.label": "제공자",
     "providers.nim":
