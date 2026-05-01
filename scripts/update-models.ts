@@ -50,14 +50,19 @@ type CatalogModel = {
 };
 
 type AAMeta = {
+  aa_model_id: string;
   swe_bench: string | null;
   aa_slug: string;
+  aa_benchmark_score: number | null;
+  aa_benchmark_name: "coding_index" | "intelligence_index" | null;
+  aa_coding_index: number | null;
   aa_intelligence: number | null;
   aa_speed_tps: number | null;
   aa_price_input: number | null;
   aa_price_output: number | null;
   aa_context: string;
   aa_url: string;
+  aa_updated_at: string;
   tier: string | null;
 };
 
@@ -296,6 +301,11 @@ function deriveTier(meta: AAMeta | null, fallbackSwe: string | null): string {
   const sweNum = parsePercentToNumber(meta?.swe_bench ?? fallbackSwe);
   const bySwe = scoreTierFromSwe(sweNum);
   if (bySwe !== "?") return bySwe;
+
+  const byBenchmark = scoreTierFromIntelligence(
+    meta?.aa_benchmark_score ?? null,
+  );
+  if (byBenchmark !== "?") return byBenchmark;
 
   const byIq = scoreTierFromIntelligence(meta?.aa_intelligence ?? null);
   return byIq;
@@ -636,6 +646,24 @@ function toAAMeta(row: any): AAMeta | null {
   const slug = firstString(row?.aa_slug, row?.slug, row?.model_slug, row?.id);
   const evaluations = row?.evaluations || {};
   const pricing = row?.pricing || {};
+  const codingIndex = parseNumberOrNull(
+    row?.aa_coding_index ??
+      row?.coding_index ??
+      evaluations?.artificial_analysis_coding_index,
+  );
+  const intelligenceIndex = parseNumberOrNull(
+    row?.aa_intelligence ??
+      row?.intelligence_index ??
+      row?.intelligence ??
+      evaluations?.artificial_analysis_intelligence_index,
+  );
+  const benchmarkScore = codingIndex ?? intelligenceIndex;
+  const benchmarkName =
+    codingIndex != null
+      ? "coding_index"
+      : intelligenceIndex != null
+        ? "intelligence_index"
+        : null;
   const sweRawValue =
     row?.swe_bench ??
     row?.sweBench ??
@@ -652,14 +680,13 @@ function toAAMeta(row: any): AAMeta | null {
     (slug ? `https://artificialanalysis.ai/models/${slug}` : "");
 
   const meta: AAMeta = {
+    aa_model_id: firstString(row?.aa_model_id, row?.model_id, row?.id),
     swe_bench: swe,
     aa_slug: slug,
-    aa_intelligence: parseNumberOrNull(
-      row?.aa_intelligence ??
-        row?.intelligence_index ??
-        row?.intelligence ??
-        evaluations?.artificial_analysis_intelligence_index,
-    ),
+    aa_benchmark_score: benchmarkScore,
+    aa_benchmark_name: benchmarkName,
+    aa_coding_index: codingIndex,
+    aa_intelligence: intelligenceIndex,
     aa_speed_tps: parseNumberOrNull(
       row?.aa_speed_tps ??
         row?.speed_tps ??
@@ -684,12 +711,21 @@ function toAAMeta(row: any): AAMeta | null {
       row?.contextWindow,
     ),
     aa_url,
+    aa_updated_at: firstString(
+      row?.aa_updated_at,
+      row?.updated_at,
+      row?.updatedAt,
+      row?.last_updated,
+      row?.lastUpdated,
+    ),
     tier,
   };
 
   if (
+    !meta.aa_model_id &&
     !meta.aa_slug &&
     meta.swe_bench == null &&
+    meta.aa_benchmark_score == null &&
     meta.aa_intelligence == null &&
     meta.aa_speed_tps == null
   ) {
@@ -720,6 +756,18 @@ function indexAAModels(rows: any[]) {
       row?.creator_slug,
       row?.creatorSlug,
     );
+    const creatorId = firstString(
+      row?.model_creator?.id,
+      row?.modelCreator?.id,
+      row?.creator_id,
+      row?.creatorId,
+    );
+    const creatorName = firstString(
+      row?.model_creator?.name,
+      row?.modelCreator?.name,
+      row?.creator_name,
+      row?.creatorName,
+    );
 
     if (modelId) {
       const bare = normalizeModelId(modelId);
@@ -727,13 +775,21 @@ function indexAAModels(rows: any[]) {
       setIfAbsent(toSlugKey(bare), meta);
     }
 
+    if (meta.aa_model_id) setIfAbsent(meta.aa_model_id, meta);
+
     if (meta.aa_slug) {
       setIfAbsent(meta.aa_slug, meta);
       if (creatorSlug) setIfAbsent(`${creatorSlug}/${meta.aa_slug}`, meta);
+      if (creatorId) setIfAbsent(`${creatorId}/${meta.aa_slug}`, meta);
+      if (creatorName) {
+        setIfAbsent(`${creatorName}/${meta.aa_slug}`, meta);
+      }
     }
 
     if (modelName) {
       setIfAbsent(modelName.replace(/\s+/g, "-"), meta);
+      if (creatorSlug) setIfAbsent(`${creatorSlug}/${modelName}`, meta);
+      if (creatorName) setIfAbsent(`${creatorName}/${modelName}`, meta);
     }
   }
 
@@ -768,14 +824,19 @@ function mergeAAMeta(target: any, meta: AAMeta | null): boolean {
   let changed = false;
 
   const updates: Record<string, any> = {
+    aa_model_id: meta.aa_model_id,
     swe_bench: meta.swe_bench,
     aa_slug: meta.aa_slug,
+    aa_benchmark_score: meta.aa_benchmark_score,
+    aa_benchmark_name: meta.aa_benchmark_name,
+    aa_coding_index: meta.aa_coding_index,
     aa_intelligence: meta.aa_intelligence,
     aa_speed_tps: meta.aa_speed_tps,
     aa_price_input: meta.aa_price_input,
     aa_price_output: meta.aa_price_output,
     aa_context: meta.aa_context,
     aa_url: meta.aa_url,
+    aa_updated_at: meta.aa_updated_at,
   };
 
   for (const [key, value] of Object.entries(updates)) {
@@ -854,7 +915,6 @@ async function main() {
   for (const endpoint of AA_ENDPOINTS) {
     try {
       const data = await fetchJson("artificialanalysis.ai", endpoint, {
-        apiKey: aaKey || undefined,
         headers: aaKey ? { "x-api-key": aaKey } : {},
       });
       aaLookup = indexAAModels(listFromAnyPayload(data));
@@ -1200,13 +1260,18 @@ async function main() {
         tier,
         context: formatContext(model.context),
         opencode_supported: supportState,
+        aa_model_id: aaHit?.aa_model_id || "",
         aa_slug: aaHit?.aa_slug || "",
+        aa_benchmark_score: aaHit?.aa_benchmark_score ?? null,
+        aa_benchmark_name: aaHit?.aa_benchmark_name ?? null,
+        aa_coding_index: aaHit?.aa_coding_index ?? null,
         aa_intelligence: aaHit?.aa_intelligence ?? null,
         aa_speed_tps: aaHit?.aa_speed_tps ?? null,
         aa_price_input: aaHit?.aa_price_input ?? null,
         aa_price_output: aaHit?.aa_price_output ?? null,
         aa_context: aaHit?.aa_context || "",
         aa_url: aaHit?.aa_url || "",
+        aa_updated_at: aaHit?.aa_updated_at || "",
       };
 
       rankings.models.push(entry);
@@ -1243,7 +1308,13 @@ async function main() {
         tier,
         context: formatContext(model.context),
         opencode_supported: supportState,
+        aa_model_id: aaHit?.aa_model_id || nimTwin?.aa_model_id || "",
         aa_slug: aaHit?.aa_slug || nimTwin?.aa_slug || "",
+        aa_benchmark_score:
+          aaHit?.aa_benchmark_score ?? nimTwin?.aa_benchmark_score ?? null,
+        aa_benchmark_name:
+          aaHit?.aa_benchmark_name ?? nimTwin?.aa_benchmark_name ?? null,
+        aa_coding_index: aaHit?.aa_coding_index ?? nimTwin?.aa_coding_index ?? null,
         aa_intelligence:
           aaHit?.aa_intelligence ?? nimTwin?.aa_intelligence ?? null,
         aa_speed_tps: aaHit?.aa_speed_tps ?? nimTwin?.aa_speed_tps ?? null,
@@ -1253,6 +1324,7 @@ async function main() {
           aaHit?.aa_price_output ?? nimTwin?.aa_price_output ?? null,
         aa_context: aaHit?.aa_context || nimTwin?.aa_context || "",
         aa_url: aaHit?.aa_url || nimTwin?.aa_url || "",
+        aa_updated_at: aaHit?.aa_updated_at || nimTwin?.aa_updated_at || "",
       };
 
       rankings.models.push(entry);
