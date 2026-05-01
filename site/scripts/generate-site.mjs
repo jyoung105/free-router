@@ -50,6 +50,31 @@ function formatValue(value, fallback = 'Unknown') {
   return String(value);
 }
 
+function formatNumber(value, fallback = '·', digits = 0) {
+  if (value === null || value === undefined || value === '') return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed.toFixed(digits) : fallback;
+}
+
+function benchmarkLabel(name) {
+  return name === 'coding_index' ? 'Code' : 'IQ';
+}
+
+function benchmarkScore(record) {
+  return (
+    record.aa_benchmark_score ??
+    record.aa_coding_index ??
+    record.aa_intelligence ??
+    null
+  );
+}
+
+function opencodeDisplay(value) {
+  if (value === true) return 'Yes';
+  if (value === false) return 'No';
+  return 'Unknown';
+}
+
 function providerLabel(source) {
   return source === 'nim' ? 'NVIDIA NIM' : source === 'openrouter' ? 'OpenRouter' : source;
 }
@@ -179,6 +204,8 @@ function buildModelRow(record) {
     record.source,
     record.tier,
     record.context,
+    record.benchmarkDisplay,
+    record.opencodeDisplay,
   ]
     .filter(Boolean)
     .join(' ')
@@ -190,8 +217,9 @@ function buildModelRow(record) {
               <td class="td-name"><a class="model-link" href="models/${escapeHtml(record.slug)}/">${escapeHtml(record.name)}</a></td>
               <td class="td-ctx">${escapeHtml(record.context)}</td>
               <td class="td-swe">${escapeHtml(record.sweDisplay)}</td>
-              <td class="td-intel">${escapeHtml(record.intelDisplay)}</td>
+              <td class="td-bench" title="${escapeHtml(record.benchmarkTitle)}">${escapeHtml(record.benchmarkDisplay)}</td>
               <td class="td-speed">${escapeHtml(record.speedDisplay)}</td>
+              <td class="td-oc ${escapeHtml(record.opencodeClass)}">${escapeHtml(record.opencodeShort)}</td>
             </tr>`;
 }
 
@@ -273,8 +301,9 @@ function buildModelPage(record, context, homeUrl) {
             <div><dt>Tier</dt><dd>${escapeHtml(record.tier)}</dd></div>
             <div><dt>Context</dt><dd>${escapeHtml(record.context)}</dd></div>
             <div><dt>SWE</dt><dd>${escapeHtml(record.sweDisplay)}</dd></div>
-            <div><dt>IQ</dt><dd>${escapeHtml(record.intelDisplay)}</dd></div>
+            <div><dt>${escapeHtml(record.benchmarkLabel)}</dt><dd>${escapeHtml(record.benchmarkDisplay)}</dd></div>
             <div><dt>TPS</dt><dd>${escapeHtml(record.speedDisplay)}</dd></div>
+            <div><dt>OpenCode</dt><dd>${escapeHtml(record.opencodeDisplay)}</dd></div>
           </dl>
         </article>
 
@@ -403,6 +432,17 @@ function enrichRecords(records, context) {
   return records.map((record) => {
     const canonicalPath = canonicalPathSerializer(record.canonicalPath, context.basePath);
     const absoluteUrl = sitemapUrlBuilder(record.canonicalPath, context);
+    const score = benchmarkScore(record);
+    const benchmarkName =
+      record.aa_benchmark_name ??
+      (record.aa_coding_index != null
+        ? 'coding_index'
+        : record.aa_intelligence != null
+          ? 'intelligence_index'
+          : null);
+    const scoreDisplay = formatNumber(score);
+    const scoreLabel = benchmarkLabel(benchmarkName);
+    const opencodeState = opencodeDisplay(record.opencode_supported);
 
     return {
       ...record,
@@ -422,12 +462,27 @@ function enrichRecords(records, context) {
           C: 'tier-c',
         }[record.tier] || 'tier-c',
       sweDisplay: formatValue(record.swe_bench, '·'),
-      intelDisplay: formatValue(record.aa_intelligence, '·'),
-      speedDisplay:
-        record.aa_speed_tps === null || record.aa_speed_tps === undefined
-          ? '·'
-          : Number(record.aa_speed_tps).toFixed(0),
-      description: `${record.name} is available on ${providerLabel(record.source)} with a ${formatValue(record.tier, 'Unranked')} tier, ${formatValue(record.context, 'unknown')} context, ${formatValue(record.swe_bench, 'no')} SWE score, and ${formatValue(record.aa_speed_tps, 'no')} TPS signal on free-router.`,
+      benchmarkLabel: scoreLabel,
+      benchmarkDisplay: scoreDisplay,
+      benchmarkTitle:
+        score === null || score === undefined
+          ? 'Benchmark unavailable'
+          : `${scoreLabel} benchmark from Artificial Analysis`,
+      speedDisplay: formatNumber(record.aa_speed_tps),
+      opencodeDisplay: opencodeState,
+      opencodeShort:
+        record.opencode_supported === true
+          ? 'Y'
+          : record.opencode_supported === false
+            ? 'N'
+            : '?',
+      opencodeClass:
+        record.opencode_supported === true
+          ? 'oc-yes'
+          : record.opencode_supported === false
+            ? 'oc-no'
+            : 'oc-unknown',
+      description: `${record.name} is available on ${providerLabel(record.source)} with a ${formatValue(record.tier, 'Unranked')} tier, ${formatValue(record.context, 'unknown')} context, ${formatValue(record.swe_bench, 'no')} SWE score, ${scoreDisplay} ${scoreLabel} benchmark, ${formatValue(record.aa_speed_tps, 'no')} TPS signal, and ${opencodeState} OpenCode support on free-router.`,
     };
   });
 }
