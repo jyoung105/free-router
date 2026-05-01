@@ -160,12 +160,57 @@ function getBaseUrl(meta: { chatUrl: string }) {
   return meta.chatUrl.replace("/chat/completions", "");
 }
 
-function openCodeProviderBlock(providerKey: string, apiKey: string | null) {
+function readStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function assertOpenCodeProviderSelectable(
+  cfg: Record<string, any>,
+  providerKey: string,
+) {
+  const disabled = readStringArray(cfg.disabled_providers);
+  if (disabled.includes(providerKey)) {
+    throw new Error(
+      `OpenCode provider "${providerKey}" is disabled in opencode.json.`,
+    );
+  }
+
+  const enabled = readStringArray(cfg.enabled_providers);
+  if (enabled.length > 0 && !enabled.includes(providerKey)) {
+    throw new Error(
+      `OpenCode provider "${providerKey}" is not listed in enabled_providers.`,
+    );
+  }
+}
+
+function openCodeProviderBlock(
+  providerKey: string,
+  apiKey: string | null,
+  model: Model,
+  existingBlock: Record<string, any> = {},
+) {
   const meta = getProviderMeta(providerKey);
+  const existingModels =
+    existingBlock.models && typeof existingBlock.models === "object"
+      ? existingBlock.models
+      : {};
+  const existingOptions =
+    existingBlock.options && typeof existingBlock.options === "object"
+      ? existingBlock.options
+      : {};
+
   return {
+    ...existingBlock,
     npm: "@ai-sdk/openai-compatible",
     name: meta.name,
+    models: {
+      ...existingModels,
+      [model.id]: existingModels[model.id] ?? {},
+    },
     options: {
+      ...existingOptions,
       baseURL: getBaseUrl(meta),
       apiKey: apiKey || `{env:${meta.envVar}}`,
     },
@@ -240,13 +285,17 @@ export function writeOpenCode(
   assertOpenCodeCompatible(model);
   const persistedApiKey = resolvePersistedApiKey(providerKey, apiKey, options);
   const currentCfg = readOpenCodeConfig();
+  assertOpenCodeProviderSelectable(currentCfg, providerKey);
+  const currentProviders = currentCfg.provider ?? {};
   const nextCfg = {
     ...currentCfg,
     provider: {
-      ...(currentCfg.provider ?? {}),
+      ...currentProviders,
       [providerKey]: openCodeProviderBlock(
         providerKey,
         persistedApiKey ?? null,
+        model,
+        currentProviders[providerKey],
       ),
     },
     model: `${providerKey}/${model.id}`,
